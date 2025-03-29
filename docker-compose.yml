@@ -24,11 +24,13 @@ services:
     command: >
       sh -c "./wait-for-it.sh db:5432 --
       && python manage.py migrate
-      && python manage.py runserver"
+      && python manage.py runserver 0.0.0:8000"
     build:
       context: ./backend
     ports:
       - "8000:8000"
+    expose:
+      - 8000
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
@@ -37,7 +39,6 @@ services:
       - POSTGRES_PORT=5432
     depends_on:
       - db
-    restart: always
 
 volumes:
   postgres_data:
