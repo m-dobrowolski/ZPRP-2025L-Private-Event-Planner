@@ -23,7 +23,7 @@ class Participant(models.Model):
     password_hash = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
     is_admin = models.BooleanField()
-    email = models.EmailField(unique=True)
+    email = models.EmailField()
 
 
 class Invitation(models.Model):
