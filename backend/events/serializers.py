@@ -61,5 +61,3 @@ class EventWithParticipantsSerializer(serializers.ModelSerializer):
                   'end_datetime', 'organizer_email', 'description',
                   'link', 'image', 'organizer_name', 'participants_limit',
                   'participants']
-
-
