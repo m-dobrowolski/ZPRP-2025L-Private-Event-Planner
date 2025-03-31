@@ -20,7 +20,7 @@ class Event(models.Model):
 class Participant(models.Model):
     id = models.AutoField(primary_key=True)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='participants')
-    password_hash = models.CharField(max_length=255)
+    password = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField(max_length=255)
     is_admin = models.BooleanField()
     email = models.EmailField()

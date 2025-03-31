@@ -14,3 +14,5 @@ class EventCreateView(APIView):
             event_serializer = EventWithParticipantsSerializer(event)
             return Response(event_serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
+

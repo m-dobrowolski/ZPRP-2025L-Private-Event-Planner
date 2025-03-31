@@ -8,5 +8,5 @@ class EventAdmin(admin.ModelAdmin):
 
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
-    list_display = ('id', 'event', 'name', 'password_hash', 'email', 'is_admin')
+    list_display = ('id', 'event', 'name', 'password', 'email', 'is_admin')
 

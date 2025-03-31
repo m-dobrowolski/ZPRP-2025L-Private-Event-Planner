@@ -14,8 +14,7 @@ class EventCreateSerializer(serializers.Serializer):
     image = serializers.ImageField(required=False, allow_null=True)
     organizer_name = serializers.CharField(required=False, allow_blank=True)
     participants_limit = serializers.IntegerField(required=False, allow_null=True)
-    # New fields for account creation
-    account_password = serializers.CharField()
+    # fields for account creation
     account_name = serializers.CharField()
     account_email = serializers.EmailField()
 
@@ -36,7 +35,6 @@ class EventCreateSerializer(serializers.Serializer):
                 )
                 organizer = Participant.objects.create(
                     event=event,
-                    password_hash=make_password(validated_data.get('account_password')),
                     name=validated_data.get('account_name'),
                     is_admin=True,
                     email=validated_data.get('account_email'),
@@ -49,7 +47,7 @@ class EventCreateSerializer(serializers.Serializer):
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
-        fields = ['id', 'event', 'name', 'email', 'is_admin']
+        fields = ['name', 'email', 'password']
 
 
 class EventWithParticipantsSerializer(serializers.ModelSerializer):
@@ -57,7 +55,7 @@ class EventWithParticipantsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Event
-        fields = ['id', 'uuid', 'name', 'location', 'start_datetime',
+        fields = ['uuid', 'name', 'location', 'start_datetime',
                   'end_datetime', 'organizer_email', 'description',
                   'link', 'image', 'organizer_name', 'participants_limit',
                   'participants']
