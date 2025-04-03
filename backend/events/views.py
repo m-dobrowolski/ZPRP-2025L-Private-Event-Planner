@@ -2,11 +2,11 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import Http404
-from .serializers import EventCreateSerializer, InvitationSerializer, PersonalizedInvitationSerializer
+from .serializers import EventCreateSerializer, InvitationSerializer, PersonalizedInvitationSerializer,\
+                         AcceptInvitationSerializer, AcceptPersonalizedInvitationSerializer
 
 
 class EventCreateView(APIView):
-
     def post(self, request, format=None):
         serializer = EventCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -16,9 +16,35 @@ class EventCreateView(APIView):
 
 
 class InvitationListView(APIView):
-
     def post(self, request, format=None):
         serializer = InvitationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+class PersonalizedInvitationView(APIView):
+    def post(self, request, format=None):
+        serializer = PersonalizedInvitationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+class AcceptInvitationView(APIView):
+    def post(self, request, format=None):
+        serializer = AcceptInvitationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+class AcceptPersonalizedInvitationView(APIView):
+    def post(self, request, format=None):
+        serializer = AcceptPersonalizedInvitationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)

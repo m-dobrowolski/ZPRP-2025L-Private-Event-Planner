@@ -14,7 +14,8 @@ class EventCreateSerializer(serializers.ModelSerializer):
 
 
 class InvitationSerializer(serializers.ModelSerializer):
-    event = serializers.SlugRelatedField(slug_field='uuid', queryset=Event.objects.all(), many=False)
+    event = serializers.SlugRelatedField(slug_field='uuid',
+                                         queryset=Event.objects.all(), many=False)
     event_edit_uuid = serializers.UUIDField(write_only=True)
 
     class Meta:
@@ -33,7 +34,6 @@ class InvitationSerializer(serializers.ModelSerializer):
         return Invitation.objects.create(event=validated_data['event'])
 
 
-
 class PersonalizedInvitationSerializer(InvitationSerializer):
     class Meta(InvitationSerializer.Meta):
         model = PersonalizedInvitation
@@ -44,11 +44,37 @@ class PersonalizedInvitationSerializer(InvitationSerializer):
                                                        name=validated_data['name'])
 
 
+class AcceptInvitationSerializer(serializers.ModelSerializer):
+    invitation = serializers.SlugRelatedField(slug_field='uuid', write_only=True,
+                                              queryset=Invitation.objects.all(), many=False)
+    event = serializers.SlugRelatedField(slug_field='uuid', read_only=True)
+
+    class Meta:
+        model = Participant
+        fields = ['uuid', 'event', 'name', 'email', 'invitation']
+        read_only_fields = ['uuid']
+
+    def create(self, validated_data):
+        invitation = validated_data.pop('invitation')
+        validated_data['event'] = invitation.event
+        return Participant.objects.create(**validated_data)
 
 
+class AcceptPersonalizedInvitationSerializer(AcceptInvitationSerializer):
+    invitation = serializers.SlugRelatedField(slug_field='uuid', write_only=True,
+                                              queryset=PersonalizedInvitation.objects.all(), many=False)
+    event = serializers.SlugRelatedField(slug_field='uuid', read_only=True)
 
+    class Meta(AcceptInvitationSerializer.Meta):
+        read_only_fields = AcceptInvitationSerializer.Meta.read_only_fields + ['name']
 
-
-
+    def create(self, validated_data):
+        invitation = validated_data.pop('invitation')
+        validated_data['event'] = invitation.event
+        validated_data['name'] = invitation.name
+        with transaction.atomic():
+            participant = Participant.objects.create(**validated_data)
+            invitation.delete()
+        return participant
 
 
