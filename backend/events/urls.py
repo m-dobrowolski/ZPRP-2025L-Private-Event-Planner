@@ -4,5 +4,7 @@ from events import views
 app_name = 'events'
 
 urlpatterns = [
-    path('create/', views.EventCreateView.as_view(), name='event-create'),
+    path('events/', views.EventCreateView.as_view(), name='event-list'),
+    path('invitations/', views.InvitationListView.as_view(), name='invitation-list'),
+
 ]
