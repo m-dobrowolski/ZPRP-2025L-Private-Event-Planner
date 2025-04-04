@@ -29,6 +29,11 @@ class ParticipantSerializer(serializers.ModelSerializer):
         model = Participant
         fields = ['name', 'id']
 
+class ParticipantAllSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Participant
+        fields = '__all__'
+
 class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation

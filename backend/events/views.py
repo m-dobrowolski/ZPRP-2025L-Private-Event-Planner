@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from django.http import Http404
 from .serializers import EventCreateSerializer, InvitationSerializer, PersonalizedInvitationSerializer,\
                          AcceptInvitationSerializer, AcceptPersonalizedInvitationSerializer,\
-                         EventAdminSerializer, EventEditSerializer, EventSerializer
+                         EventAdminSerializer, EventEditSerializer, EventSerializer,\
+                         ParticipantAllSerializer
 from .models import Event, Invitation, PersonalizedInvitation, Participant
 
 
@@ -93,3 +94,39 @@ class AcceptPersonalizedInvitationView(APIView):
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
+
+class ParticipantDetailView(APIView):
+    def get_object(self, uuid):
+        try:
+            return Participant.objects.get(uuid=uuid)
+        except Participant.DoesNotExist:
+            raise Http404
+
+    def get(self, request, uuid, format=None):
+        participant = self.get_object(uuid)
+        serializer = ParticipantAllSerializer(participant)
+        return Response(serializer.data, status=200)
+
+    def delete(self, request, uuid, format=None):
+        participant = self.get_object(uuid)
+        participant.delete()
+        return Response(status=204)
+
+
+class DeleteParticipantAsAdminView(APIView):
+    def get_object(self, id, edit_uuid):
+        try:
+           participant = Participant.objects.get(id=id)
+        except Participant.DoesNotExist:
+            raise Http404
+        if str(participant.event.edit_uuid) != str(edit_uuid):
+            raise Http404
+        return participant
+
+    def delete(self, request, id, edit_uuid, format=None):
+        participant = self.get_object(id, edit_uuid)
+        participant.delete()
+        return Response(status=204)
+
+
