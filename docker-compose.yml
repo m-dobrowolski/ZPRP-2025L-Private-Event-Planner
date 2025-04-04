@@ -39,6 +39,8 @@ services:
       - POSTGRES_PORT=5432
     depends_on:
       - db
+    volumes:
+      - ./backend:/app
 
 volumes:
   postgres_data:
