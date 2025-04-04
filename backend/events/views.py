@@ -9,7 +9,7 @@ from .serializers import EventCreateSerializer, InvitationSerializer, Personaliz
 from .models import Event, Invitation, PersonalizedInvitation, Participant
 
 
-class EventCreateView(APIView):
+class EventCreate(APIView):
     def post(self, request, format=None):
         serializer = EventCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -17,13 +17,12 @@ class EventCreateView(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
-
-class EventAdminDetailView(APIView):
+class EventAdminDetail(APIView):
     def get_object(self, uuid, edit_uuid):
         try:
             event = Event.objects.get(uuid=uuid)
             if str(event.edit_uuid) != str(edit_uuid):
-                return Response({"error": "Edit UUID does not match."}, status=400)
+                raise Http404
             return event
         except Event.DoesNotExist:
             raise Http404
@@ -46,8 +45,7 @@ class EventAdminDetailView(APIView):
         event.delete()
         return Response(status=204)
 
-
-class EventDetailView(APIView):
+class EventDetail(APIView):
     def get_object(self, uuid):
         try:
             return Event.objects.get(uuid=uuid)
@@ -60,7 +58,7 @@ class EventDetailView(APIView):
         return Response(serializer.data, status=200)
 
 
-class InvitationListView(APIView):
+class InvitationCreate(APIView):
     def post(self, request, format=None):
         serializer = InvitationSerializer(data=request.data)
         if serializer.is_valid():
@@ -68,17 +66,7 @@ class InvitationListView(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
-
-class PersonalizedInvitationView(APIView):
-    def post(self, request, format=None):
-        serializer = PersonalizedInvitationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-
-class AcceptInvitationView(APIView):
+class InvitationAccept(APIView):
     def post(self, request, format=None):
         serializer = AcceptInvitationSerializer(data=request.data)
         if serializer.is_valid():
@@ -86,8 +74,31 @@ class AcceptInvitationView(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
+class InvitationDelete(APIView):
+    def get_object(self, uuid, edit_uuid):
+        try:
+            invitation = Invitation.objects.get(uuid=uuid)
+            if str(invitation.event.edit_uuid) != str(edit_uuid):
+                raise Http404
+            return invitation
+        except Invitation.DoesNotExist:
+            raise Http404
 
-class AcceptPersonalizedInvitationView(APIView):
+    def delete(self, request, uuid, edit_uuid, format=None):
+        invitation = self.get_object(uuid, edit_uuid)
+        invitation.delete()
+        return Response(status=204)
+
+
+class PersonalizedInvitationCreate(APIView):
+    def post(self, request, format=None):
+        serializer = PersonalizedInvitationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+class PersonalizedInvitationAccept(APIView):
     def post(self, request, format=None):
         serializer = AcceptPersonalizedInvitationSerializer(data=request.data)
         if serializer.is_valid():
@@ -95,8 +106,23 @@ class AcceptPersonalizedInvitationView(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
+class PersonalizedInvitationDelete(APIView):
+    def get_object(self, uuid, edit_uuid):
+        try:
+            invitation = PersonalizedInvitation.objects.get(uuid=uuid)
+            if str(invitation.event.edit_uuid) != str(edit_uuid):
+                raise Http404
+            return invitation
+        except PersonalizedInvitation.DoesNotExist:
+            raise Http404
 
-class ParticipantDetailView(APIView):
+    def delete(self, request, uuid, edit_uuid, format=None):
+        invitation = self.get_object(uuid, edit_uuid)
+        invitation.delete()
+        return Response(status=204)
+
+
+class ParticipantDetail(APIView):
     def get_object(self, uuid):
         try:
             return Participant.objects.get(uuid=uuid)
@@ -114,7 +140,7 @@ class ParticipantDetailView(APIView):
         return Response(status=204)
 
 
-class DeleteParticipantAsAdminView(APIView):
+class DeleteParticipantAsAdmin(APIView):
     def get_object(self, id, edit_uuid):
         try:
            participant = Participant.objects.get(id=id)

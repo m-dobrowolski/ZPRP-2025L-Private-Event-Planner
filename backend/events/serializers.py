@@ -34,12 +34,12 @@ class ParticipantAllSerializer(serializers.ModelSerializer):
         model = Participant
         fields = '__all__'
 
-class InvitationSerializer(serializers.ModelSerializer):
+class InvitationBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
         fields = ['uuid']
 
-class PersonalizedInvitationSerializer(serializers.ModelSerializer):
+class PersonalizedInvitationBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = PersonalizedInvitation
         fields = ['uuid', 'name']
@@ -52,8 +52,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class EventAdminSerializer(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True, read_only=True)
-    invitations = InvitationSerializer(many=True, read_only=True)
-    personalized_invitations = PersonalizedInvitationSerializer(many=True, read_only=True)
+    invitations = InvitationBasicSerializer(many=True, read_only=True)
+    personalized_invitations = PersonalizedInvitationBasicSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
@@ -84,7 +84,7 @@ class InvitationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         event = attrs['event']
         event_edit_uuid = attrs.get('event_edit_uuid')
-        if str(event.edit_uuid) != event_edit_uuid:
+        if str(event.edit_uuid) != str(event_edit_uuid):
             raise serializers.ValidationError("Event edit uuid does not match.")
         return attrs
 
