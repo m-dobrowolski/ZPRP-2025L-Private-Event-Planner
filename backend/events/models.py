@@ -32,12 +32,16 @@ class Invitation(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='invitations')
 
 
-class PersonalizedInvitation(Invitation):
+class PersonalizedInvitation(models.Model):
+    id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='personalized_invitations')
     name = models.CharField(max_length=255)
 
 
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='comments')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='replies', blank=True, null=True)
     author = models.ForeignKey(Participant, on_delete=models.CASCADE)

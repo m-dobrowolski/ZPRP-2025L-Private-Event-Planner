@@ -12,6 +12,59 @@ class EventCreateSerializer(serializers.ModelSerializer):
                   'participants_limit']
         read_only_fields = ['uuid', 'edit_uuid']
 
+class EventEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ['name', 'location', 'start_datetime', 'end_datetime',
+                  'organizer_email', 'description', 'link', 'image', 'organizer_name',
+                  'participants_limit']
+
+    def valid_participants_limit(self, value):
+        if value <= self.instance.participants.count():
+            raise serializers.ValidationError("Participants limit must be greater than current participants count.")
+        return value
+
+class ParticipantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Participant
+        fields = ['name', 'id']
+
+class InvitationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invitation
+        fields = ['uuid']
+
+class PersonalizedInvitationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PersonalizedInvitation
+        fields = ['uuid', 'name']
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = ParticipantSerializer(read_only=True)
+    class Meta:
+        model = Comment
+        fields = ['uuid', 'content', 'date', 'author', 'parent']
+
+class EventAdminSerializer(serializers.ModelSerializer):
+    participants = ParticipantSerializer(many=True, read_only=True)
+    invitations = InvitationSerializer(many=True, read_only=True)
+    personalized_invitations = PersonalizedInvitationSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Event
+        fields = "__all__"
+
+class EventSerializer(serializers.ModelSerializer):
+    participants = ParticipantSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Event
+        fields = ['uuid', 'name', 'location', 'start_datetime', 'end_datetime',
+                  'organizer_email', 'description', 'link', 'image', 'organizer_name',
+                  'participants_limit', 'participants', 'comments']
+
 
 class InvitationSerializer(serializers.ModelSerializer):
     event = serializers.SlugRelatedField(slug_field='uuid',
@@ -26,7 +79,7 @@ class InvitationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         event = attrs['event']
         event_edit_uuid = attrs.get('event_edit_uuid')
-        if event.edit_uuid != event_edit_uuid:
+        if str(event.edit_uuid) != event_edit_uuid:
             raise serializers.ValidationError("Event edit uuid does not match.")
         return attrs
 
