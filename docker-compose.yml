@@ -59,6 +59,8 @@ services:
     depends_on:
       - db
       - rabbitmq
+    volumes:
+      - ./backend:/app
 
   worker:
     build:

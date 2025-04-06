@@ -1,61 +1,138 @@
-from .models import Event, Participant
+from .models import Event, Invitation, PersonalizedInvitation, Participant, Comment
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
 
-class EventCreateSerializer(serializers.Serializer):
-    name = serializers.CharField()
-    location = serializers.CharField()
-    start_datetime = serializers.DateTimeField()
-    end_datetime = serializers.DateTimeField()
-    organizer_email = serializers.EmailField()
-    description = serializers.CharField(required=False, allow_blank=True)
-    link = serializers.URLField(required=False, allow_blank=True)
-    image = serializers.ImageField(required=False, allow_null=True)
-    organizer_name = serializers.CharField(required=False, allow_blank=True)
-    participants_limit = serializers.IntegerField(required=False, allow_null=True)
-    # fields for account creation
-    account_name = serializers.CharField()
-    account_email = serializers.EmailField()
 
-    def create(self, validated_data):
-        try:
-            with transaction.atomic():
-                event = Event.objects.create(
-                    name=validated_data.get('name'),
-                    location=validated_data.get('location'),
-                    start_datetime=validated_data.get('start_datetime'),
-                    end_datetime=validated_data.get('end_datetime'),
-                    organizer_email=validated_data.get('organizer_email'),
-                    description=validated_data.get('description'),
-                    link=validated_data.get('link'),
-                    image=validated_data.get('image'),
-                    organizer_name=validated_data.get('organizer_name'),
-                    participants_limit=validated_data.get('participants_limit'),
-                )
-                organizer = Participant.objects.create(
-                    event=event,
-                    name=validated_data.get('account_name'),
-                    is_admin=True,
-                    email=validated_data.get('account_email'),
-                )
-                return event
-        except Exception as e:
-            raise serializers.ValidationError(f"Error creating event: {str(e)}")
+class EventCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ['uuid', 'edit_uuid', 'name', 'location', 'start_datetime', 'end_datetime',
+                  'organizer_email', 'description', 'link', 'image', 'organizer_name',
+                  'participants_limit']
+        read_only_fields = ['uuid', 'edit_uuid']
 
+class EventEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ['name', 'location', 'start_datetime', 'end_datetime',
+                  'organizer_email', 'description', 'link', 'image', 'organizer_name',
+                  'participants_limit']
+
+    def valid_participants_limit(self, value):
+        if value <= self.instance.participants.count():
+            raise serializers.ValidationError("Participants limit must be greater than current participants count.")
+        return value
 
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
-        fields = ['name', 'email', 'password']
+        fields = ['name', 'id']
 
+class ParticipantAllSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Participant
+        fields = '__all__'
 
-class EventWithParticipantsSerializer(serializers.ModelSerializer):
+class InvitationBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invitation
+        fields = ['uuid']
+
+class PersonalizedInvitationBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PersonalizedInvitation
+        fields = ['uuid', 'name']
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = ParticipantSerializer(read_only=True)
+    class Meta:
+        model = Comment
+        fields = ['uuid', 'content', 'date', 'author', 'parent']
+
+class EventAdminSerializer(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True, read_only=True)
+    invitations = InvitationBasicSerializer(many=True, read_only=True)
+    personalized_invitations = PersonalizedInvitationBasicSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Event
-        fields = ['uuid', 'name', 'location', 'start_datetime',
-                  'end_datetime', 'organizer_email', 'description',
-                  'link', 'image', 'organizer_name', 'participants_limit',
-                  'participants']
+        fields = "__all__"
+
+class EventSerializer(serializers.ModelSerializer):
+    participants = ParticipantSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Event
+        fields = ['uuid', 'name', 'location', 'start_datetime', 'end_datetime',
+                  'organizer_email', 'description', 'link', 'image', 'organizer_name',
+                  'participants_limit', 'participants', 'comments']
+
+
+class InvitationSerializer(serializers.ModelSerializer):
+    event = serializers.SlugRelatedField(slug_field='uuid',
+                                         queryset=Event.objects.all(), many=False)
+    event_edit_uuid = serializers.UUIDField(write_only=True)
+
+    class Meta:
+        model = Invitation
+        fields = ['uuid', 'event', 'event_edit_uuid']
+        read_only_fields = ['uuid']
+
+    def validate(self, attrs):
+        event = attrs['event']
+        event_edit_uuid = attrs.get('event_edit_uuid')
+        if str(event.edit_uuid) != str(event_edit_uuid):
+            raise serializers.ValidationError("Event edit uuid does not match.")
+        return attrs
+
+    def create(self, validated_data):
+        return Invitation.objects.create(event=validated_data['event'])
+
+
+class PersonalizedInvitationSerializer(InvitationSerializer):
+    class Meta(InvitationSerializer.Meta):
+        model = PersonalizedInvitation
+        fields = InvitationSerializer.Meta.fields + ['name']
+
+    def create(self, validated_data):
+        return PersonalizedInvitation.objects.create(event=validated_data['event'],
+                                                       name=validated_data['name'])
+
+
+class AcceptInvitationSerializer(serializers.ModelSerializer):
+    invitation = serializers.SlugRelatedField(slug_field='uuid', write_only=True,
+                                              queryset=Invitation.objects.all(), many=False)
+    event = serializers.SlugRelatedField(slug_field='uuid', read_only=True)
+
+    class Meta:
+        model = Participant
+        fields = ['uuid', 'event', 'name', 'email', 'invitation']
+        read_only_fields = ['uuid']
+
+    def create(self, validated_data):
+        invitation = validated_data.pop('invitation')
+        validated_data['event'] = invitation.event
+        return Participant.objects.create(**validated_data)
+
+
+class AcceptPersonalizedInvitationSerializer(AcceptInvitationSerializer):
+    invitation = serializers.SlugRelatedField(slug_field='uuid', write_only=True,
+                                              queryset=PersonalizedInvitation.objects.all(), many=False)
+    event = serializers.SlugRelatedField(slug_field='uuid', read_only=True)
+
+    class Meta(AcceptInvitationSerializer.Meta):
+        read_only_fields = AcceptInvitationSerializer.Meta.read_only_fields + ['name']
+
+    def create(self, validated_data):
+        invitation = validated_data.pop('invitation')
+        validated_data['event'] = invitation.event
+        validated_data['name'] = invitation.name
+        with transaction.atomic():
+            participant = Participant.objects.create(**validated_data)
+            invitation.delete()
+        return participant
+
+

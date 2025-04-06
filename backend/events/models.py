@@ -1,10 +1,11 @@
-import uuid
+from uuid import uuid4
 from django.db import models
 from django.utils.timezone import now
 
 class Event(models.Model):
     id = models.AutoField(primary_key=True)
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
+    edit_uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
     name = models.CharField(max_length=255)
     location = models.CharField(max_length=255)
     start_datetime = models.DateTimeField()
@@ -19,21 +20,28 @@ class Event(models.Model):
 
 class Participant(models.Model):
     id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='participants')
-    password = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField(max_length=255)
-    is_admin = models.BooleanField()
     email = models.EmailField()
 
 
 class Invitation(models.Model):
     id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='invitations')
-    name = models.CharField(max_length=255, blank=True, null=True)
+
+
+class PersonalizedInvitation(models.Model):
+    id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='personalized_invitations')
+    name = models.CharField(max_length=255)
 
 
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='comments')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='replies', blank=True, null=True)
     author = models.ForeignKey(Participant, on_delete=models.CASCADE)
