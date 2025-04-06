@@ -1,8 +1,10 @@
+import logging
+
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 
-
+logger = logging.getLogger(__name__)
 def send_event_invite_email_sync(to_email, name, surname, event_details):
     """
     Sends a personalized event invitation email.
@@ -31,7 +33,7 @@ def send_event_invite_email_sync(to_email, name, surname, event_details):
         msg.attach_alternative(html_content, "text/html")
 
         msg.send(fail_silently=False)
-        print(f"Successfully sent invite to {to_email}") # TODO: change to logging
+        logger.info(f"Successfully sent invite to {to_email}")
 
     except Exception as e:
-        print(f"Error sending email to {to_email}: {e}") # TODO: change to logging
+        logger.error(f"Error sending email to {to_email}: {e}")
