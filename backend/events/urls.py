@@ -1,8 +1,10 @@
 from django.urls import path
-from events import views
+from .views import test_email_view, EventCreateView
 
 app_name = 'events'
 
 urlpatterns = [
-    path('create/', views.EventCreateView.as_view(), name='event-create'),
+    path('create/', EventCreateView.as_view(), name='event-create'),
+    path('test_email/', test_email_view, name='test_email'),
+
 ]
