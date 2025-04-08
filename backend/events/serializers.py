@@ -59,10 +59,18 @@ class EventAdminSerializer(serializers.ModelSerializer):
         model = Event
         fields = "__all__"
 
-    def valid_participants_limit(self, value):
-        if value <= self.instance.participants.count():
+    def validate_participants_limit(self, value):
+        if value is not None and value < 1:
+            raise serializers.ValidationError("Participants limit must be greater than 0.")
+        if self.instance and value < self.instance.participants.count():
             raise serializers.ValidationError("Participants limit must be greater than participants count.")
         return value
+
+    def validate(self, attrs):
+        if attrs.get('start_datetime') and attrs.get('end_datetime'):
+            if attrs['start_datetime'] >= attrs['end_datetime']:
+                raise serializers.ValidationError("End datetime must be after start datetime.")
+        return attrs
 
 
 class EventSerializer(serializers.ModelSerializer):
