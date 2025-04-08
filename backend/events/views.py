@@ -2,16 +2,15 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import Http404
-from .serializers import EventCreateSerializer, InvitationSerializer, PersonalizedInvitationSerializer,\
+from .serializers import EventSerializer, InvitationSerializer, PersonalizedInvitationSerializer,\
                          AcceptInvitationSerializer, AcceptPersonalizedInvitationSerializer,\
-                         EventAdminSerializer, EventEditSerializer, EventSerializer,\
-                         ParticipantAllSerializer
+                         EventAdminSerializer, EventSerializer
 from .models import Event, Invitation, PersonalizedInvitation, Participant
 
 
 class EventCreate(APIView):
     def post(self, request, format=None):
-        serializer = EventCreateSerializer(data=request.data)
+        serializer = EventAdminSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
@@ -34,7 +33,7 @@ class EventAdminDetail(APIView):
 
     def patch(self, request, uuid, edit_uuid, format=None):
         event = self.get_object(uuid, edit_uuid)
-        serializer = EventEditSerializer(event, data=request.data, partial=True)
+        serializer = EventAdminSerializer(event, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=200)
@@ -122,17 +121,12 @@ class PersonalizedInvitationDelete(APIView):
         return Response(status=204)
 
 
-class ParticipantDetail(APIView):
+class LeaveEvent(APIView):
     def get_object(self, uuid):
         try:
             return Participant.objects.get(uuid=uuid)
         except Participant.DoesNotExist:
             raise Http404
-
-    def get(self, request, uuid, format=None):
-        participant = self.get_object(uuid)
-        serializer = ParticipantAllSerializer(participant)
-        return Response(serializer.data, status=200)
 
     def delete(self, request, uuid, format=None):
         participant = self.get_object(uuid)

@@ -4,71 +4,10 @@ from django.contrib.auth.hashers import make_password
 from django.db import transaction
 
 
-class EventCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event
-        fields = ['uuid', 'edit_uuid', 'name', 'location', 'start_datetime', 'end_datetime',
-                  'organizer_email', 'description', 'link', 'image', 'organizer_name',
-                  'participants_limit']
-        read_only_fields = ['uuid', 'edit_uuid']
-
-class EventEditSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event
-        fields = ['name', 'location', 'start_datetime', 'end_datetime',
-                  'organizer_email', 'description', 'link', 'image', 'organizer_name',
-                  'participants_limit']
-
-    def valid_participants_limit(self, value):
-        if value <= self.instance.participants.count():
-            raise serializers.ValidationError("Participants limit must be greater than current participants count.")
-        return value
-
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
-        fields = ['name', 'id']
-
-class ParticipantAllSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Participant
-        fields = '__all__'
-
-class InvitationBasicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Invitation
-        fields = ['uuid']
-
-class PersonalizedInvitationBasicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PersonalizedInvitation
-        fields = ['uuid', 'name']
-
-class CommentSerializer(serializers.ModelSerializer):
-    author = ParticipantSerializer(read_only=True)
-    class Meta:
-        model = Comment
-        fields = ['uuid', 'content', 'date', 'author', 'parent']
-
-class EventAdminSerializer(serializers.ModelSerializer):
-    participants = ParticipantSerializer(many=True, read_only=True)
-    invitations = InvitationBasicSerializer(many=True, read_only=True)
-    personalized_invitations = PersonalizedInvitationBasicSerializer(many=True, read_only=True)
-    comments = CommentSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Event
-        fields = "__all__"
-
-class EventSerializer(serializers.ModelSerializer):
-    participants = ParticipantSerializer(many=True, read_only=True)
-    comments = CommentSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Event
-        fields = ['uuid', 'name', 'location', 'start_datetime', 'end_datetime',
-                  'organizer_email', 'description', 'link', 'image', 'organizer_name',
-                  'participants_limit', 'participants', 'comments']
+        fields = ['name', 'id', 'email']
 
 
 class InvitationSerializer(serializers.ModelSerializer):
@@ -91,7 +30,6 @@ class InvitationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return Invitation.objects.create(event=validated_data['event'])
 
-
 class PersonalizedInvitationSerializer(InvitationSerializer):
     class Meta(InvitationSerializer.Meta):
         model = PersonalizedInvitation
@@ -100,6 +38,43 @@ class PersonalizedInvitationSerializer(InvitationSerializer):
     def create(self, validated_data):
         return PersonalizedInvitation.objects.create(event=validated_data['event'],
                                                        name=validated_data['name'])
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = ParticipantSerializer(read_only=True)
+    class Meta:
+        model = Comment
+        fields = ['uuid', 'content', 'date', 'author', 'parent']
+
+
+class EventAdminSerializer(serializers.ModelSerializer):
+    """Used for creating, editing events and for retrieving them as admin of the event."""
+    participants = ParticipantSerializer(many=True, read_only=True)
+    invitations = InvitationSerializer(many=True, read_only=True)
+    personalized_invitations = PersonalizedInvitationSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
+    read_only_fields = ['id', 'uuid', 'edit_uuid']
+
+    class Meta:
+        model = Event
+        fields = "__all__"
+
+    def valid_participants_limit(self, value):
+        if value <= self.instance.participants.count():
+            raise serializers.ValidationError("Participants limit must be greater than participants count.")
+        return value
+
+
+class EventSerializer(serializers.ModelSerializer):
+    """Used for retrieving events as a participant."""
+    participants = ParticipantSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Event
+        fields = ['uuid', 'name', 'location', 'start_datetime', 'end_datetime',
+                  'organizer_email', 'description', 'link', 'image', 'organizer_name',
+                  'participants_limit', 'participants', 'comments']
 
 
 class AcceptInvitationSerializer(serializers.ModelSerializer):
@@ -134,5 +109,3 @@ class AcceptPersonalizedInvitationSerializer(AcceptInvitationSerializer):
             participant = Participant.objects.create(**validated_data)
             invitation.delete()
         return participant
-
-
