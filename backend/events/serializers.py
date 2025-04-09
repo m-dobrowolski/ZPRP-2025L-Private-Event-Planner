@@ -95,6 +95,13 @@ class AcceptInvitationSerializer(serializers.ModelSerializer):
         fields = ['uuid', 'event', 'name', 'email', 'invitation']
         read_only_fields = ['uuid']
 
+    def validate(self, attrs):
+        email = attrs.get('email')
+        event = attrs.get('invitation').event
+        if event.participants.filter(email=email).exists():
+            raise serializers.ValidationError("Participant with this email already exists in this event.")
+        return attrs
+
     def create(self, validated_data):
         invitation = validated_data.pop('invitation')
         validated_data['event'] = invitation.event
