@@ -6,9 +6,13 @@ from .serializers import EventSerializer, InvitationSerializer, PersonalizedInvi
                          AcceptInvitationSerializer, AcceptPersonalizedInvitationSerializer,\
                          EventAdminSerializer, EventSerializer
 from .models import Event, Invitation, PersonalizedInvitation, Participant
-
+from .utils import event_to_ics
+from django.http import HttpResponse
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 
 class EventCreate(APIView):
+    serializer_class = EventAdminSerializer
+
     def post(self, request, format=None):
         serializer = EventAdminSerializer(data=request.data)
         if serializer.is_valid():
@@ -17,6 +21,8 @@ class EventCreate(APIView):
         return Response(serializer.errors, status=400)
 
 class EventAdminDetail(APIView):
+    serializer_class = EventAdminSerializer
+
     def get_object(self, uuid, edit_uuid):
         try:
             event = Event.objects.get(uuid=uuid)
@@ -45,6 +51,8 @@ class EventAdminDetail(APIView):
         return Response(status=204)
 
 class EventDetail(APIView):
+    serializer_class = EventSerializer
+
     def get_object(self, uuid):
         try:
             return Event.objects.get(uuid=uuid)
@@ -58,6 +66,8 @@ class EventDetail(APIView):
 
 
 class InvitationCreate(APIView):
+    serializer_class = InvitationSerializer
+
     def post(self, request, format=None):
         serializer = InvitationSerializer(data=request.data)
         if serializer.is_valid():
@@ -66,6 +76,8 @@ class InvitationCreate(APIView):
         return Response(serializer.errors, status=400)
 
 class InvitationAccept(APIView):
+    serializer_class = AcceptInvitationSerializer
+
     def post(self, request, format=None):
         serializer = AcceptInvitationSerializer(data=request.data)
         if serializer.is_valid():
@@ -74,6 +86,7 @@ class InvitationAccept(APIView):
         return Response(serializer.errors, status=400)
 
 class InvitationDelete(APIView):
+
     def get_object(self, uuid, edit_uuid):
         try:
             invitation = Invitation.objects.get(uuid=uuid)
@@ -90,6 +103,8 @@ class InvitationDelete(APIView):
 
 
 class PersonalizedInvitationCreate(APIView):
+    serializer_class = PersonalizedInvitationSerializer
+
     def post(self, request, format=None):
         serializer = PersonalizedInvitationSerializer(data=request.data)
         if serializer.is_valid():
@@ -98,6 +113,8 @@ class PersonalizedInvitationCreate(APIView):
         return Response(serializer.errors, status=400)
 
 class PersonalizedInvitationAccept(APIView):
+    serializer_class = AcceptPersonalizedInvitationSerializer
+
     def post(self, request, format=None):
         serializer = AcceptPersonalizedInvitationSerializer(data=request.data)
         if serializer.is_valid():
@@ -106,6 +123,7 @@ class PersonalizedInvitationAccept(APIView):
         return Response(serializer.errors, status=400)
 
 class PersonalizedInvitationDelete(APIView):
+
     def get_object(self, uuid, edit_uuid):
         try:
             invitation = PersonalizedInvitation.objects.get(uuid=uuid)
@@ -149,4 +167,38 @@ class DeleteParticipantAsAdmin(APIView):
         participant.delete()
         return Response(status=204)
 
+
+class EventICSDownloadView(APIView):
+    def get_object(self, uuid):
+        try:
+            return Event.objects.get(uuid=uuid)
+        except Event.DoesNotExist:
+            raise Http404
+
+    @extend_schema(
+        summary="Download event as ICS file",
+        description="Returns an iCalendar (.ics) file for the given event UUID.",
+        parameters=[
+            OpenApiParameter(
+                name='uuid',
+                description='UUID of the event',
+                required=True,
+                type=str,
+                location=OpenApiParameter.PATH
+            )
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=None,
+                description='ICS calendar file for the event'
+            ),
+            404: OpenApiResponse(description='Event not found'),
+        },
+    )
+    def get(self, request, uuid, format=None):
+        event = self.get_object(uuid)
+        ics_content = event_to_ics(event)
+        response = HttpResponse(ics_content, content_type='text/calendar')
+        response['Content-Disposition'] = f'attachment; filename="{event.name}.ics"'
+        return response
 
