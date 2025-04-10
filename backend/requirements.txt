@@ -2,3 +2,6 @@ Django==5.0.0
 djangorestframework==3.15.0
 Pillow==11.1.0
 psycopg2-binary==2.9.9
+factory-boy==3.3.3
+ics==0.7.2
+drf_spectacular==0.28.0
