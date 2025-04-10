@@ -1,7 +1,9 @@
+from datetime import date
+
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from .serializers import EventSerializer, InvitationSerializer, PersonalizedInvitationSerializer,\
                          AcceptInvitationSerializer, AcceptPersonalizedInvitationSerializer,\
                          EventAdminSerializer, EventSerializer
@@ -9,6 +11,7 @@ from .models import Event, Invitation, PersonalizedInvitation, Participant
 from .utils import event_to_ics
 from django.http import HttpResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from .emails import send_event_invite_email_sync
 
 class EventCreate(APIView):
     serializer_class = EventAdminSerializer
@@ -202,3 +205,17 @@ class EventICSDownloadView(APIView):
         response['Content-Disposition'] = f'attachment; filename="{event.name}.ics"'
         return response
 
+def test_email_view(request):
+    recipient_email = '01178524@pw.edu.pl' # enter test email here
+    name = "John"
+    surname = "Doe"
+    event_details = {
+        'name': name,
+        'date': date.today(),
+        'event_link': "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    }
+    try:
+        send_event_invite_email_sync(recipient_email, name, surname, event_details)
+        return HttpResponse("Invite email sent successfully!")
+    except Exception as e:
+        return HttpResponse(f"Error sending email: {e}") # For debugging purposes

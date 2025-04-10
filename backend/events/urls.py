@@ -19,4 +19,5 @@ urlpatterns = [
     path('participant/<int:id>/<uuid:edit_uuid>/', views.DeleteParticipantAsAdmin.as_view(), name='delete-participant-admin'),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='events:schema'), name='swagger-ui'),
+    path('test_email/', views.test_email_view, name='test_email'),
 ]
