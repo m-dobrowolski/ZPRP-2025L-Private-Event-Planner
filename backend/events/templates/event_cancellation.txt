@@ -1,0 +1,11 @@
+Hello {{ name }} {{ surname }},
+
+The event you were invited to has been cancelled: {{ event_name }}!
+
+Date: {{ event_date }}
+Link: {{ event_link }}
+
+We are sorry!
+
+Best regards,
+The Event Team
