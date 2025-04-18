@@ -110,7 +110,7 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'yourpassword')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'youremail@example.com')
 
 if 'test' in sys.argv:
-    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # settings.py
 DRAMATIQ_BROKER = {
