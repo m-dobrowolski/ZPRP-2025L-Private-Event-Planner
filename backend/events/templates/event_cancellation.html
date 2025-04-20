@@ -1,17 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Event Invitation: {{ event_name }}</title>
+    <title>Event Cancelled: {{ event_name }}</title>
 </head>
 <body>
-    <p>Hello <strong>{{ name }} {{ surname }}</strong>,</p>
+    <p>Hello <strong>{{ participant_name }}</strong>,</p>
 
-    <p>The event you were invited to has been cancelled: <strong>{{ event_name }}</strong>!</p>
-
-    <p>
-        <strong>Date:</strong> {{ event_date }}<br>
-        <strong>Link:</strong> {{ event_link }}
-    </p>
+    <p>The event you were invited to has been cancelled: <strong>{{ event_name }}</strong></p>
 
     <p>We are sorry!</p>
 

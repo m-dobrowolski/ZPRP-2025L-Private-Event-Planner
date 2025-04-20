@@ -83,7 +83,19 @@ class EventAdminDetail(APIView):
 
     def delete(self, request, uuid, edit_uuid, format=None):
         event = self.get_object(uuid, edit_uuid)
+        participants_to_notify = list(event.participants.all())
+        event_name = event.name
         event.delete()
+        for participant in participants_to_notify:
+            try:
+                send_event_cancellation_notification_task.send(
+                    participant_email=participant.email,
+                    participant_name=participant.name,
+                    event_name=event_name,
+                )
+            except Exception as e:
+                logger.error(f"Failed to enqueue cancellation task for participant {participant.email} (event {uuid} deleted): {e}")
+
         return Response(status=204)
 
 class EventDetail(APIView):

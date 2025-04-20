@@ -1,9 +1,6 @@
-Hello {{ name }} {{ surname }},
+Hello {{ participant_name }},
 
-The event you were invited to has been cancelled: {{ event_name }}!
-
-Date: {{ event_date }}
-Link: {{ event_link }}
+The event you were invited to has been cancelled: {{ event_name }}
 
 We are sorry!
 
