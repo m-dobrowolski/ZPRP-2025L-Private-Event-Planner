@@ -1,8 +1,7 @@
-Hello {{ name }} {{ surname }},
+Hello {{ participant_name }},
 
 The event you are a part of has been modified: {{ event_name }}!
 
-Date: {{ event_date }}
 Link: {{ event_link }}
 
 We hope to see you there!

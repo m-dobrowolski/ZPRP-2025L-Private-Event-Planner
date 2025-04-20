@@ -65,7 +65,19 @@ class EventAdminDetail(APIView):
         event = self.get_object(uuid, edit_uuid)
         serializer = EventAdminSerializer(event, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            updated_event = serializer.save()
+            participants = updated_event.participants.all()
+            for participant in participants:
+                try:
+                    send_event_update_notification_task.send(
+                        participant_email=participant.email,
+                        participant_name=participant.name,
+                        event_name=updated_event.name,
+                        event_uuid=str(updated_event.uuid)
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to enqueue update task for participant {participant.email} event {updated_event.uuid}: {e}")
+
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
 
