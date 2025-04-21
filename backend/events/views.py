@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 
 from django.shortcuts import render
@@ -11,7 +12,14 @@ from .models import Event, Invitation, PersonalizedInvitation, Participant
 from .utils import event_to_ics
 from django.http import HttpResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
-from .emails import send_event_invite_email_sync
+from .tasks import (
+    send_event_invite_email_task,
+    send_event_admin_link_task,
+    send_event_update_notification_task,
+    send_event_cancellation_notification_task
+)
+
+logger = logging.getLogger(__name__)
 
 class EventCreate(APIView):
     serializer_class = EventAdminSerializer
@@ -19,7 +27,20 @@ class EventCreate(APIView):
     def post(self, request, format=None):
         serializer = EventAdminSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            event = serializer.save()
+
+            try:
+                send_event_admin_link_task.send(
+                    creator_email=event.organizer_email,
+                    creator_name=event.organizer_name,
+                    event_name=event.name,
+                    event_uuid=str(event.uuid),
+                    event_edit_uuid=str(event.edit_uuid)
+                )
+            except Exception as e:
+                logger.error(f"Failed to enqueue admin link task for event {event.uuid}: {e}")
+                pass
+
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -44,13 +65,37 @@ class EventAdminDetail(APIView):
         event = self.get_object(uuid, edit_uuid)
         serializer = EventAdminSerializer(event, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            updated_event = serializer.save()
+            participants = updated_event.participants.all()
+            for participant in participants:
+                try:
+                    send_event_update_notification_task.send(
+                        participant_email=participant.email,
+                        participant_name=participant.name,
+                        event_name=updated_event.name,
+                        event_uuid=str(updated_event.uuid)
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to enqueue update task for participant {participant.email} event {updated_event.uuid}: {e}")
+
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
 
     def delete(self, request, uuid, edit_uuid, format=None):
         event = self.get_object(uuid, edit_uuid)
+        participants_to_notify = list(event.participants.all())
+        event_name = event.name
         event.delete()
+        for participant in participants_to_notify:
+            try:
+                send_event_cancellation_notification_task.send(
+                    participant_email=participant.email,
+                    participant_name=participant.name,
+                    event_name=event_name,
+                )
+            except Exception as e:
+                logger.error(f"Failed to enqueue cancellation task for participant {participant.email} (event {uuid} deleted): {e}")
+
         return Response(status=204)
 
 class EventDetail(APIView):
@@ -206,16 +251,16 @@ class EventICSDownloadView(APIView):
         return response
 
 def test_email_view(request):
-    recipient_email = '01178524@pw.edu.pl' # enter test email here
+    recipient_email = '' # enter test email here
     name = "John"
     surname = "Doe"
     event_details = {
-        'name': name,
+        'name': "Dni pomidora w Szczebodzicach",
         'date': date.today(),
         'event_link': "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
     }
     try:
-        send_event_invite_email_sync(recipient_email, name, surname, event_details)
+        send_event_invite_email_task(recipient_email, name, surname, event_details)
         return HttpResponse("Invite email sent successfully!")
     except Exception as e:
         return HttpResponse(f"Error sending email: {e}") # For debugging purposes
