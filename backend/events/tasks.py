@@ -64,6 +64,7 @@ def send_event_admin_link_task(creator_email, creator_name, event_name, event_uu
         'event_name': event_name,
         'admin_link': admin_link,
         'event_uuid': str(event_uuid), # Include UUIDs for reference if link fails
+        'event_edit_uuid': str(event_edit_uuid),
     }
 
     try:

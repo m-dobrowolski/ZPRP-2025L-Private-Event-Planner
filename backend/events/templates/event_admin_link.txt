@@ -2,8 +2,9 @@ Hello {{ name }} {{ surname }},
 
 You created the event: {{ event_name }}!
 
-Date: {{ event_date }}
 Link: {{ event_link }}
+Event UUID (for reference): {{ event_uuid }}
+Edit UUID (for reference): {{ event_edit_uuid }}
 
 Here is the admin link
 
