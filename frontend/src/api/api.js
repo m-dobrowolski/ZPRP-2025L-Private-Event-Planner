@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://localhost:8000/api/";
 
 async function fetchData(url, options = {}) {
     try {
@@ -65,13 +65,22 @@ async function sendData(url, method, body) {
 }
 
 export async function createEvent(formData) {
-    return sendData('/api/event/create/', 'POST', formData);
+    return sendData('event/create/', 'POST', formData);
 }
 
 export async function getEventDetails(uuid) {
-    return fetchData(`/api/event/${uuid}/`);
+    return fetchData(`event/${uuid}/`);
 }
 
 export async function getEventAdminDetails(uuid, editUuid) {
-    return fetchData(`/api/event/${uuid}/${editUuid}/`);
+    return fetchData(`event/${uuid}/${editUuid}/`);
+}
+
+export async function updateEvent(uuid, editUuid, formData) {
+    return sendData(`event/${uuid}/${editUuid}/`, 'PATCH', formData);
+}
+
+// New: Delete event
+export async function deleteEvent(uuid, editUuid) {
+    return fetchData(`event/${uuid}/${editUuid}/`, { method: 'DELETE' });
 }
