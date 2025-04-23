@@ -46,10 +46,11 @@ class CommentSerializer(serializers.ModelSerializer):
     parent = serializers.SlugRelatedField(slug_field='uuid', queryset=Comment.objects.all(), required=False, allow_null=True)
     author = serializers.SlugRelatedField(slug_field='uuid', read_only=True)
     author_uuid = serializers.UUIDField(write_only=True)
+    replies = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['uuid', 'event', 'parent', 'author', 'content', 'date', 'author_uuid']
+        fields = ['uuid', 'event', 'parent', 'author', 'content', 'date', 'author_uuid', 'replies']
         read_only_fields = ['uuid', 'author', 'date']
 
     def validate(self, attrs):
@@ -64,6 +65,9 @@ class CommentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['author'] = Participant.objects.get(uuid=validated_data.pop('author_uuid'))
         return Comment.objects.create(**validated_data)
+
+    def get_replies(self, obj):
+        return CommentSerializer(obj.replies.all(), many=True).data
 
 
 class EventAdminSerializer(serializers.ModelSerializer):

@@ -271,7 +271,7 @@ class CommentsList(APIView):
 
     def get(self, request, event_uuid, format=None):
         event = self.get_object(event_uuid)
-        comments = event.comments.all()
+        comments = event.comments.filter(parent__isnull=True)
         serializer = CommentSerializer(comments, many=True)
         return Response(serializer.data, status=200)
 
