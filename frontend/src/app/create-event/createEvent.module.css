@@ -58,3 +58,22 @@
 .submitButton:hover {
     background-color: #333;
 }
+
+.link{
+    word-break: break-all;
+    color: #3498db;
+    padding-left: 0.5rem;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.link_row{
+    padding-top: 0.75rem;
+}
+
+.success_container{
+    font-size: 1.2rem;
+}

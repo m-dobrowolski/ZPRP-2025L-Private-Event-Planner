@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createEvent } from '@/api/api';
 import styles from './createEvent.module.css';
+import Link from 'next/link';
 
 export default function CreateEventPage() {
     const router = useRouter();
+    const [successData, setSuccessData] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         location: '',
@@ -38,12 +40,47 @@ export default function CreateEventPage() {
                 }
             }
 
-            await createEvent(formDataToSend);
-            router.push('/event');
+            const res = await createEvent(formDataToSend);
+            const { uuid, edit_uuid } = res;
+            setSuccessData({ uuid, edit_uuid });
         } catch (error) {
             console.error('Error creating event:', error);
         }
     };
+
+    if (successData) {
+        return (
+            <div className={styles.success_container}>
+                <h1 className={styles.title}>Event created successfully!</h1>
+                <p>Here are the links to access and manage the event. Keep managing link private, it cannot be changed.
+                    Links will be sent to your email address shortly.
+                </p>
+
+                <div className={styles.link_row}>
+                    <div className={styles.link_description}>
+                        Link to access event:
+                    </div>
+                    <div className={styles.link}>
+                        <Link href={`/event/${successData.uuid}`}>
+                            http://localhost:3000/event/{successData.uuid}
+                        </Link>
+                    </div>
+                </div>
+
+                <div className={styles.link_row}>
+                    <div className={styles.link_description}>
+                        Link to manage event:
+                    </div>
+                    <div className={styles.link}>
+                        <Link href={`/event/${successData.uuid}/${successData.edit_uuid}`}>
+                            http://localhost:3000/event/{successData.uuid}/{successData.edit_uuid}
+                        </Link>
+                    </div>
+                </div>
+
+            </div>
+        );
+    }
 
     return (
         <div className={styles.container}>
