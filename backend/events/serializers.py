@@ -55,11 +55,13 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         event = attrs.get('event')
+        parent = attrs.get('parent')
         author_uuid = attrs.get('author_uuid')
 
         if not event.participants.filter(uuid=author_uuid).exists():
             raise serializers.ValidationError("Author must be a participant of the event.")
-
+        if (parent is not None) and (parent.event != event):
+            raise serializers.ValidationError("Parent comment does not exist in this event.")
         return attrs
 
     def create(self, validated_data):
