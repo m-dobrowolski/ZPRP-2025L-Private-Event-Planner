@@ -260,6 +260,21 @@ class CommentsCreate(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
+class CommentsList(APIView):
+    serializer_class = CommentSerializer
+
+    def get_object(self, event_uuid):
+        try:
+            return Event.objects.get(uuid=event_uuid)
+        except Event.DoesNotExist:
+            raise Http404
+
+    def get(self, request, event_uuid, format=None):
+        event = self.get_object(event_uuid)
+        comments = event.comments.all()
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data, status=200)
+
 
 def test_email_view(request):
     recipient_email = '' # enter test email here
