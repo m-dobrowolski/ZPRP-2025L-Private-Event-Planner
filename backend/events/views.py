@@ -1,5 +1,5 @@
 import logging
-from datetime import date
+from datetime import date, datetime
 
 from django.shortcuts import render
 from rest_framework.views import APIView
@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from django.http import Http404, HttpResponse
 from .serializers import EventSerializer, InvitationSerializer, PersonalizedInvitationSerializer,\
                          AcceptInvitationSerializer, AcceptPersonalizedInvitationSerializer,\
-                         EventAdminSerializer, EventSerializer
+                         EventAdminSerializer, EventSerializer, CommentSerializer
 from .models import Event, Invitation, PersonalizedInvitation, Participant
 from .utils import event_to_ics
 from django.http import HttpResponse
@@ -249,6 +249,17 @@ class EventICSDownloadView(APIView):
         response = HttpResponse(ics_content, content_type='text/calendar')
         response['Content-Disposition'] = f'attachment; filename="{event.name}.ics"'
         return response
+
+class CommentsCreate(APIView):
+    serializer_class = CommentSerializer
+
+    def post(self, request, format=None):
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
 
 def test_email_view(request):
     recipient_email = '' # enter test email here
