@@ -2,7 +2,6 @@ Hello {{ name }} {{ surname }},
 
 You created the event: {{ event_name }}!
 
-Date: {{ event_date }}
 Link: {{ event_link }}
 
 Here is the admin link

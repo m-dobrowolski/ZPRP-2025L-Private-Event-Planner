@@ -7,8 +7,14 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-def _get_url(view_name: str, kwargs=None) -> str:
-    return "<placeholder_url>"
+def _get_url(kwargs=None) -> str:
+    uuid = kwargs.pop('uuid', None)
+    edit_uuid = kwargs.pop('edit_uuid', None)
+    if uuid:
+        if edit_uuid:
+            return f'http://localhost:3000/event/{uuid}/{edit_uuid}'
+        return f'http://localhost:3000/event/{uuid}'
+    return "http://localhost:3000/"
 
 @dramatiq.actor(max_retries=3)
 def send_event_invite_email_task(to_email, name, surname, event_details):
@@ -53,7 +59,7 @@ def send_event_admin_link_task(creator_email, creator_name, event_name, event_uu
     recipient_list = [creator_email]
 
     try:
-        admin_link = _get_url('event-admin-detail', kwargs={'uuid': str(event_uuid), 'edit_uuid': str(event_edit_uuid)})
+        admin_link = _get_url(kwargs={'uuid': str(event_uuid), 'edit_uuid': str(event_edit_uuid)})
     except Exception as e:
         logger.error(f"Could not get URL for event-admin-detail: {e}. Using fallback.")
         admin_link = f"Please check your event dashboard for event UUID: {event_uuid}"
@@ -64,6 +70,7 @@ def send_event_admin_link_task(creator_email, creator_name, event_name, event_uu
         'event_name': event_name,
         'admin_link': admin_link,
         'event_uuid': str(event_uuid), # Include UUIDs for reference if link fails
+        'event_edit_uuid': str(event_edit_uuid),
     }
 
     try:
@@ -91,7 +98,7 @@ def send_event_update_notification_task(participant_email, participant_name, eve
     recipient_list = [participant_email]
 
     try:
-        event_link = _get_url('event-detail', kwargs={'uuid': str(event_uuid)})
+        event_link = _get_url(kwargs={'uuid': str(event_uuid)})
     except Exception as e:
         logger.error(f"Could not reverse URL for event-detail: {e}. Using fallback.")
         event_link = f"Please check the event page for event UUID: {event_uuid}"

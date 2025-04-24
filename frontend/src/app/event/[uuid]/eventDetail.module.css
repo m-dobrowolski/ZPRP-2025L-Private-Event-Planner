@@ -1,0 +1,55 @@
+.container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.title {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.imageContainer {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+
+.detailItem {
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.detailItem strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.detailItem p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.detailItem a {
+     color: #0070f3;
+     text-decoration: none;
+}
+
+.detailItem a:hover {
+     text-decoration: underline;
+}
+
+.error {
+    color: #dc3545;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
