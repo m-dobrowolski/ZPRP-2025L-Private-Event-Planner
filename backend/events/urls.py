@@ -20,4 +20,7 @@ urlpatterns = [
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='events:schema'), name='swagger-ui'),
     path('test_email/', views.test_email_view, name='test_email'),
+    path('comments/create/', views.CommentsCreate.as_view(), name='comments-create'),
+    path('comments/<uuid:event_uuid>/', views.CommentsList.as_view(), name='comments-list'),
+    path('comments/delete/<uuid:comment_uuid>/<uuid:participant_or_event_edit_uuid>', views.CommentsDelete.as_view(), name='comments-delete'),
 ]

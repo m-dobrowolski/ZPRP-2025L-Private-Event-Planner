@@ -41,10 +41,35 @@ class PersonalizedInvitationSerializer(InvitationSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = ParticipantSerializer(read_only=True)
+    """Used for creating and retrieving comments."""
+    event = serializers.SlugRelatedField(slug_field='uuid', queryset=Event.objects.all(), many=False)
+    parent = serializers.SlugRelatedField(slug_field='uuid', queryset=Comment.objects.all(), required=False, allow_null=True)
+    author = serializers.SlugRelatedField(slug_field='name', read_only=True)
+    author_uuid = serializers.UUIDField(write_only=True)
+    replies = serializers.SerializerMethodField()
+
     class Meta:
         model = Comment
-        fields = ['uuid', 'content', 'date', 'author', 'parent']
+        fields = ['uuid', 'event', 'parent', 'author', 'content', 'date', 'author_uuid', 'replies']
+        read_only_fields = ['uuid', 'author', 'date']
+
+    def validate(self, attrs):
+        event = attrs.get('event')
+        parent = attrs.get('parent')
+        author_uuid = attrs.get('author_uuid')
+
+        if not event.participants.filter(uuid=author_uuid).exists():
+            raise serializers.ValidationError("Author must be a participant of the event.")
+        if (parent is not None) and (parent.event != event):
+            raise serializers.ValidationError("Parent comment does not exist in this event.")
+        return attrs
+
+    def create(self, validated_data):
+        validated_data['author'] = Participant.objects.get(uuid=validated_data.pop('author_uuid'))
+        return Comment.objects.create(**validated_data)
+
+    def get_replies(self, obj):
+        return CommentSerializer(obj.replies.all(), many=True).data
 
 
 class EventAdminSerializer(serializers.ModelSerializer):

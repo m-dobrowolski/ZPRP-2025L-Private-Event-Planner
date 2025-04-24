@@ -1,5 +1,5 @@
 import logging
-from datetime import date
+from datetime import date, datetime
 
 from django.shortcuts import render
 from rest_framework.views import APIView
@@ -7,8 +7,9 @@ from rest_framework.response import Response
 from django.http import Http404, HttpResponse
 from .serializers import EventSerializer, InvitationSerializer, PersonalizedInvitationSerializer,\
                          AcceptInvitationSerializer, AcceptPersonalizedInvitationSerializer,\
-                         EventAdminSerializer, EventSerializer
-from .models import Event, Invitation, PersonalizedInvitation, Participant
+                         EventAdminSerializer, EventSerializer, CommentSerializer
+from .models import Event, Invitation, PersonalizedInvitation, Participant, \
+                            Comment
 from .utils import event_to_ics
 from django.http import HttpResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
@@ -249,6 +250,51 @@ class EventICSDownloadView(APIView):
         response = HttpResponse(ics_content, content_type='text/calendar')
         response['Content-Disposition'] = f'attachment; filename="{event.name}.ics"'
         return response
+
+class CommentsCreate(APIView):
+    serializer_class = CommentSerializer
+
+    def post(self, request, format=None):
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+class CommentsList(APIView):
+    serializer_class = CommentSerializer
+
+    def get_object(self, event_uuid):
+        try:
+            return Event.objects.get(uuid=event_uuid)
+        except Event.DoesNotExist:
+            raise Http404
+
+    def get(self, request, event_uuid, format=None):
+        event = self.get_object(event_uuid)
+        comments = event.comments.filter(parent__isnull=True)
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data, status=200)
+
+
+class CommentsDelete(APIView):
+    serializer_class = CommentSerializer
+
+    def get_object(self, comment_uuid, participant_or_event_edit_uuid):
+        try:
+            comment = Comment.objects.get(uuid=comment_uuid)
+            if str(comment.event.edit_uuid) != str(participant_or_event_edit_uuid) \
+                    and str(comment.author.uuid) != str(participant_or_event_edit_uuid):
+                raise Http404
+            return comment
+        except Comment.DoesNotExist:
+            raise Http404
+
+    def delete(self, request, comment_uuid, participant_or_event_edit_uuid, format=None):
+        comment = self.get_object(comment_uuid, participant_or_event_edit_uuid)
+        comment.delete()
+        return Response(status=204)
+
 
 def test_email_view(request):
     recipient_email = '' # enter test email here
