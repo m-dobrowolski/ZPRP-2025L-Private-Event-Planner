@@ -44,7 +44,7 @@ class CommentSerializer(serializers.ModelSerializer):
     """Used for creating and retrieving comments."""
     event = serializers.SlugRelatedField(slug_field='uuid', queryset=Event.objects.all(), many=False)
     parent = serializers.SlugRelatedField(slug_field='uuid', queryset=Comment.objects.all(), required=False, allow_null=True)
-    author = serializers.SlugRelatedField(slug_field='uuid', read_only=True)
+    author = serializers.SlugRelatedField(slug_field='name', read_only=True)
     author_uuid = serializers.UUIDField(write_only=True)
     replies = serializers.SerializerMethodField()
 
