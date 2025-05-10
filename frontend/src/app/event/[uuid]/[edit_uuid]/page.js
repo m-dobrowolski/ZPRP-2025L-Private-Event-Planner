@@ -9,6 +9,8 @@ import {
     deleteEvent,
     deleteParticipantAsAdmin,
     deleteGenericInvitation,
+    deletePersonalizedInvitation,
+    createPersonalizedInvitation,
     createGenericInvitation
 } from '@/api/api';
 import styles from './editEvent.module.css';
@@ -39,10 +41,14 @@ export default function EditEventPage() {
     // Participant states
     const [participants, setParticipants] = useState([]);
     const [genericInvitations, setGenericInvitations] = useState([]);
+    const [personalizedInvitations, setPersonalizedInvitations] = useState([]);
 
     // Add participant modal
     const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
+    const [addPersonalizedFormData, setAddPersonalizedFormData] = useState({ name: '', email: '' });
+    const [loadingAddPersonalized, setLoadingAddPersonalized] = useState(false);
     const [loadingAddGeneric, setLoadingAddGeneric] = useState(false);
+    const [errorAddPersonalized, setErrorAddPersonalized] = useState(null);
     const [errorAddGeneric, setErrorAddGeneric] = useState(null);
 
     // Loading states
@@ -51,6 +57,7 @@ export default function EditEventPage() {
     const [loadingDeleteEvent, setLoadingDeleteEvent] = useState(false);
     const [deletingParticipantId, setDeletingParticipantId] = useState(null);
     const [deletingGenericInvitationUuid, setDeletingGenericInvitationUuid] = useState(null);
+    const [deletingPersonalizedInvitationUuid, setDeletingPersonalizedInvitationUuid] = useState(null);
 
     // Error states
     const [errorFetch, setErrorFetch] = useState(null);
@@ -58,6 +65,7 @@ export default function EditEventPage() {
     const [errorDeleteEvent, setErrorDeleteEvent] = useState(null);
     const [errorDeleteParticipant, setErrorDeleteParticipant] = useState(null);
     const [errorDeleteGenericInvitation, setErrorDeleteGenericInvitation] = useState(null);
+    const [errorDeletePersonalizedInvitation, setErrorDeletePersonalizedInvitation] = useState(null);
 
 
     const fetchEventData = async () => {
@@ -65,7 +73,10 @@ export default function EditEventPage() {
         setErrorFetch(null);
         setErrorDeleteParticipant(null);
         setErrorDeleteGenericInvitation(null);
+        setErrorDeletePersonalizedInvitation(null);
+        setErrorAddPersonalized(null);
         setErrorAddGeneric(null);
+
 
         try {
             const data = await getEventAdminDetails(uuid, edit_uuid);
@@ -87,6 +98,8 @@ export default function EditEventPage() {
 
             setParticipants(data.participants || []);
             setGenericInvitations(data.invitations || []);
+            setPersonalizedInvitations(data.personalized_invitations || []);
+
 
         } catch (err) {
             setErrorFetch(err.message || 'Failed to fetch event for editing. Check UUIDs.');
@@ -232,13 +245,74 @@ export default function EditEventPage() {
         }
     };
 
+    const handleDeletePersonalizedInvitation = async (invitationUuid, participantName) => {
+         if (!confirm(`Are you sure you want to delete the invitation for "${participantName}"?`)) {
+             return;
+         }
+         setDeletingPersonalizedInvitationUuid(invitationUuid);
+         setErrorDeletePersonalizedInvitation(null);
+         try {
+             await deletePersonalizedInvitation(invitationUuid, edit_uuid);
+              // Update list locally
+             setPersonalizedInvitations(personalizedInvitations.filter(inv => inv.uuid !== invitationUuid));
+             alert(`Invitation for "${participantName}" deleted successfully.`);
+         } catch (error) {
+              console.error(`Error deleting personalized invitation ${invitationUuid}:`, error);
+              const errorMessage = error.response?.data?.detail || error.message || `Failed to delete invitation for "${participantName}".`;
+              setErrorDeletePersonalizedInvitation(errorMessage);
+         } finally {
+              setDeletingPersonalizedInvitationUuid(null);
+         }
+    };
+
     const openAddParticipantModal = () => {
          setShowAddParticipantModal(true);
+         setAddPersonalizedFormData({ name: '', email: '' });
+         setErrorAddPersonalized(null);
          setErrorAddGeneric(null);
     };
 
     const closeAddParticipantModal = () => {
          setShowAddParticipantModal(false);
+    };
+
+    const handleAddPersonalizedChange = (e) => {
+        const { name, value } = e.target;
+        setAddPersonalizedFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleAddPersonalizedSubmit = async (e) => {
+        e.preventDefault();
+        setLoadingAddPersonalized(true);
+        setErrorAddPersonalized(null);
+
+        if (!addPersonalizedFormData.name || !addPersonalizedFormData.email) {
+            setErrorAddPersonalized('Please enter both name and email for the personalized invitation.');
+            setLoadingAddPersonalized(false);
+            return;
+        }
+
+        try {
+            const response = await createPersonalizedInvitation(
+                uuid,
+                edit_uuid,
+                addPersonalizedFormData.name,
+            );
+            console.log('Personalized invitation created:', response);
+            alert(`Invitation sent to ${addPersonalizedFormData.email}!`);
+            // Clear the form
+            setAddPersonalizedFormData({ name: '', email: '' });
+
+            await fetchEventData();
+
+
+        } catch (error) {
+            console.error('Error creating personalized invitation:', error);
+             const errorMessage = error.response?.data?.detail || error.message || 'Failed to create personalized invitation.';
+            setErrorAddPersonalized(errorMessage);
+        } finally {
+            setLoadingAddPersonalized(false);
+        }
     };
 
     const handleCreateGenericInvitation = async () => {
@@ -270,9 +344,9 @@ export default function EditEventPage() {
         `${window.location.origin}/invitation/accept/${genericInvitations[0].uuid}` : null;
 
 
-    const isMainActionLoading = loadingSave || loadingDeleteEvent || deletingParticipantId !== null || deletingGenericInvitationUuid !== null;
+    const isMainActionLoading = loadingSave || loadingDeleteEvent || deletingParticipantId !== null || deletingGenericInvitationUuid !== null || deletingPersonalizedInvitationUuid !== null;
 
-    const isAddModalLoading = loadingAddGeneric;
+    const isAddModalLoading = loadingAddPersonalized || loadingAddGeneric;
 
     if (loadingFetch) {
         return <div className={styles.container}>Loading event for editing...</div>;
@@ -290,6 +364,7 @@ export default function EditEventPage() {
             {errorDeleteEvent && <div className={styles.error}>{errorDeleteEvent}</div>}
             {errorDeleteParticipant && <div className={styles.error}>{errorDeleteParticipant}</div>}
             {errorDeleteGenericInvitation && <div className={styles.error}>{errorDeleteGenericInvitation}</div>}
+            {errorDeletePersonalizedInvitation && <div className={styles.error}>{errorDeletePersonalizedInvitation}</div>}
 
             <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
@@ -490,17 +565,76 @@ export default function EditEventPage() {
                 ) : (
                     <p>No generic invitation link has been created yet.</p>
                 )}
+
+                {/* Personalized Invitations */}
+                <h3>Personalized Invitations ({personalizedInvitations.length})</h3>
+                {personalizedInvitations.length > 0 ? (
+                    <ul className={styles.invitationList}>
+                        {personalizedInvitations.map(invitation => (
+                            <li key={invitation.uuid} className={styles.invitationItem}>
+                                 <span>
+                                     <strong>{invitation.name}</strong> ({invitation.email}) - Link: <Link href={`/personalized-invitation/accept/${invitation.uuid}`} target="_blank" rel="noopener noreferrer">Accept</Link>
+                                 </span>
+                                 <button
+                                    className={styles.deleteInvitationButton}
+                                    onClick={() => handleDeletePersonalizedInvitation(invitation.uuid, invitation.name || invitation.email || 'Unnamed Invitation')}
+                                    disabled={deletingPersonalizedInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
+                                 >
+                                     {deletingPersonalizedInvitationUuid === invitation.uuid ? 'Deleting...' : 'Delete'}
+                                 </button>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>No personalized invitations have been sent yet.</p>
+                )}
+
             </div>
 
             {/* --- Add Participant Modal --- */}
             {showAddParticipantModal && (
                 <div className={modalStyles.modalOverlay} onClick={closeAddParticipantModal}>
-                    <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+                    <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}> //{/* Prevent clicks inside closing the modal */}
                         <button className={modalStyles.closeButton} onClick={closeAddParticipantModal}>×</button>
                         <h2>Add Participant or Invitation</h2>
 
                         {isAddModalLoading && <div className={modalStyles.loading}>Processing...</div>}
+                        {errorAddPersonalized && <div className={modalStyles.error}>{errorAddPersonalized}</div>}
                         {errorAddGeneric && <div className={modalStyles.error}>{errorAddGeneric}</div>}
+
+                        <div className={modalStyles.section}>
+                            <h3>Send Personalized Invitation</h3>
+                            <p>Send an invitation email to a specific person.</p>
+                            <form onSubmit={handleAddPersonalizedSubmit} className={modalStyles.form}>
+                                <div className={modalStyles.formGroup}>
+                                    <label className={modalStyles.label}>Name</label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={addPersonalizedFormData.name}
+                                        onChange={handleAddPersonalizedChange}
+                                        className={modalStyles.input}
+                                        required
+                                        disabled={isAddModalLoading}
+                                     />
+                                </div>
+                                <div className={modalStyles.formGroup}>
+                                    <label className={modalStyles.label}>Email</label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={addPersonalizedFormData.email}
+                                        onChange={handleAddPersonalizedChange}
+                                        className={modalStyles.input}
+                                        required
+                                        disabled={isAddModalLoading}
+                                    />
+                                </div>
+                                <button type="submit" className={modalStyles.submitButton} disabled={isAddModalLoading}>
+                                    {loadingAddPersonalized ? 'Sending...' : 'Send Invitation'}
+                                </button>
+                            </form>
+                        </div>
 
                         <div className={modalStyles.section}>
                             <h3>Generic Invitation Link</h3>

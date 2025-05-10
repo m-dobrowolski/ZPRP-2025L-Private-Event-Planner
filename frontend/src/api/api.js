@@ -110,3 +110,16 @@ export async function createGenericInvitation(eventUuid, editUuid) {
 export async function deleteGenericInvitation(invitationUuid, editUuid) {
     return fetchData(`invitation/delete/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
 }
+
+export async function createPersonalizedInvitation(eventUuid, editUuid, name) {
+    const body = {
+        event: eventUuid,
+        event_edit_uuid: editUuid,
+        name: name,
+    };
+    return sendData('personalized-invitation/create/', 'POST', body);
+}
+
+export async function deletePersonalizedInvitation(invitationUuid, editUuid) {
+    return fetchData(`personalized-invitation/delete/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
+}
