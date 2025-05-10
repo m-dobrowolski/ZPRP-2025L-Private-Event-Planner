@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
     getEventAdminDetails,
     updateEvent,
     deleteEvent,
     deleteParticipantAsAdmin,
+    deleteGenericInvitation,
+    createGenericInvitation
 } from '@/api/api';
 import styles from './editEvent.module.css';
+import modalStyles from './addParticipantModal.module.css'
 
 export default function EditEventPage() {
     const router = useRouter();
@@ -34,24 +38,34 @@ export default function EditEventPage() {
 
     // Participant states
     const [participants, setParticipants] = useState([]);
+    const [genericInvitations, setGenericInvitations] = useState([]);
+
+    // Add participant modal
+    const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
+    const [loadingAddGeneric, setLoadingAddGeneric] = useState(false);
+    const [errorAddGeneric, setErrorAddGeneric] = useState(null);
 
     // Loading states
     const [loadingFetch, setLoadingFetch] = useState(true);
     const [loadingSave, setLoadingSave] = useState(false);
     const [loadingDeleteEvent, setLoadingDeleteEvent] = useState(false);
     const [deletingParticipantId, setDeletingParticipantId] = useState(null);
+    const [deletingGenericInvitationUuid, setDeletingGenericInvitationUuid] = useState(null);
 
     // Error states
     const [errorFetch, setErrorFetch] = useState(null);
     const [errorSave, setErrorSave] = useState(null);
     const [errorDeleteEvent, setErrorDeleteEvent] = useState(null);
     const [errorDeleteParticipant, setErrorDeleteParticipant] = useState(null);
+    const [errorDeleteGenericInvitation, setErrorDeleteGenericInvitation] = useState(null);
 
 
     const fetchEventData = async () => {
         setLoadingFetch(true);
         setErrorFetch(null);
         setErrorDeleteParticipant(null);
+        setErrorDeleteGenericInvitation(null);
+        setErrorAddGeneric(null);
 
         try {
             const data = await getEventAdminDetails(uuid, edit_uuid);
@@ -72,6 +86,7 @@ export default function EditEventPage() {
             setImagePreview(data.image || null);
 
             setParticipants(data.participants || []);
+            setGenericInvitations(data.invitations || []);
 
         } catch (err) {
             setErrorFetch(err.message || 'Failed to fetch event for editing. Check UUIDs.');
@@ -197,7 +212,67 @@ export default function EditEventPage() {
              setDeletingParticipantId(null);
          }
     };
-    const isMainActionLoading = loadingSave || loadingDeleteEvent || deletingParticipantId !== null;
+
+    const handleDeleteGenericInvitation = async (invitationUuid) => {
+        if (!confirm('Are you sure you want to delete this generic invitation link? It will no longer be usable.')) {
+            return;
+        }
+        setDeletingGenericInvitationUuid(invitationUuid);
+        setErrorDeleteGenericInvitation(null);
+        try {
+            await deleteGenericInvitation(invitationUuid, edit_uuid);
+            setGenericInvitations(genericInvitations.filter(inv => inv.uuid !== invitationUuid));
+            alert('Generic invitation deleted successfully.');
+        } catch (error) {
+             console.error(`Error deleting generic invitation ${invitationUuid}:`, error);
+             const errorMessage = error.response?.data?.detail || error.message || 'Failed to delete generic invitation.';
+             setErrorDeleteGenericInvitation(errorMessage);
+        } finally {
+             setDeletingGenericInvitationUuid(null);
+        }
+    };
+
+    const openAddParticipantModal = () => {
+         setShowAddParticipantModal(true);
+         setErrorAddGeneric(null);
+    };
+
+    const closeAddParticipantModal = () => {
+         setShowAddParticipantModal(false);
+    };
+
+    const handleCreateGenericInvitation = async () => {
+         if (genericInvitations.length > 0) {
+              setErrorAddGeneric("A generic invitation link already exists for this event.");
+              return;
+         }
+
+         setLoadingAddGeneric(true);
+         setErrorAddGeneric(null);
+         try {
+             const response = await createGenericInvitation(uuid, edit_uuid);
+             console.log('Generic invitation created:', response);
+             alert('Generic invitation link created!');
+
+            await fetchEventData();
+
+
+         } catch (error) {
+             console.error('Error creating generic invitation:', error);
+             const errorMessage = error.response?.data?.detail || error.message || 'Failed to create generic invitation link.';
+             setErrorAddGeneric(errorMessage);
+         } finally {
+             setLoadingAddGeneric(false);
+         }
+    };
+
+    const currentGenericLink = genericInvitations.length > 0 ?
+        `${window.location.origin}/invitation/accept/${genericInvitations[0].uuid}` : null;
+
+
+    const isMainActionLoading = loadingSave || loadingDeleteEvent || deletingParticipantId !== null || deletingGenericInvitationUuid !== null;
+
+    const isAddModalLoading = loadingAddGeneric;
 
     if (loadingFetch) {
         return <div className={styles.container}>Loading event for editing...</div>;
@@ -214,6 +289,7 @@ export default function EditEventPage() {
             {errorSave && <div className={styles.error}>{errorSave}</div>}
             {errorDeleteEvent && <div className={styles.error}>{errorDeleteEvent}</div>}
             {errorDeleteParticipant && <div className={styles.error}>{errorDeleteParticipant}</div>}
+            {errorDeleteGenericInvitation && <div className={styles.error}>{errorDeleteGenericInvitation}</div>}
 
             <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
@@ -366,7 +442,7 @@ export default function EditEventPage() {
                                 <button
                                     className={styles.deleteParticipantButton}
                                     onClick={() => handleDeleteParticipant(participant.id, participant.name || 'Unnamed Participant')}
-                                    disabled={deletingParticipantId === participant.id || isMainActionLoading}
+                                    disabled={deletingParticipantId === participant.id || isMainActionLoading || isAddModalLoading}
                                 >
                                     {deletingParticipantId === participant.id ? 'Deleting...' : 'Delete'}
                                 </button>
@@ -378,6 +454,87 @@ export default function EditEventPage() {
                 )}
             </div>
 
+            {/* --- Invitations Section --- */}
+            <div className={styles.section}>
+                <h2>Invitations</h2>
+
+                <button
+                    onClick={openAddParticipantModal}
+                    className={styles.submitButton}
+                    disabled={isMainActionLoading || isAddModalLoading}
+                >
+                    Add New Participant / Invitation
+                </button>
+
+                {/* Generic Invitations */}
+                <h3>Generic Invitation Links ({genericInvitations.length})</h3>
+                {genericInvitations.length > 0 ? (
+                    <ul className={styles.invitationList}>
+                        {genericInvitations.map(invitation => (
+                            <li key={invitation.uuid} className={styles.invitationItem}>
+                                <span>
+                                    Link: <Link href={`/invitation/accept/${invitation.uuid}`} target="_blank" rel="noopener noreferrer">
+                                        {`${window.location.origin}/invitation/accept/${invitation.uuid}`}
+                                    </Link>
+                                </span>
+                                <button
+                                    className={styles.deleteInvitationButton}
+                                    onClick={() => handleDeleteGenericInvitation(invitation.uuid)}
+                                    disabled={deletingGenericInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
+                                >
+                                    {deletingGenericInvitationUuid === invitation.uuid ? 'Deleting...' : 'Delete Link'}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>No generic invitation link has been created yet.</p>
+                )}
+            </div>
+
+            {/* --- Add Participant Modal --- */}
+            {showAddParticipantModal && (
+                <div className={modalStyles.modalOverlay} onClick={closeAddParticipantModal}>
+                    <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <button className={modalStyles.closeButton} onClick={closeAddParticipantModal}>×</button>
+                        <h2>Add Participant or Invitation</h2>
+
+                        {isAddModalLoading && <div className={modalStyles.loading}>Processing...</div>}
+                        {errorAddGeneric && <div className={modalStyles.error}>{errorAddGeneric}</div>}
+
+                        <div className={modalStyles.section}>
+                            <h3>Generic Invitation Link</h3>
+                            <p>Generate a link anyone can use to sign up for this event. (Only one generic link per event)</p>
+
+                            {currentGenericLink ? (
+                                <div className={modalStyles.genericLinkBox}>
+                                    <strong>Invitation Link:</strong>
+                                    <p>
+                                        <Link href={currentGenericLink} target="_blank" rel="noopener noreferrer">
+                                            {currentGenericLink}
+                                        </Link>
+                                    </p>
+                                    <small>Share this link. Users will enter their name and email to join.</small>
+                                    <button
+                                        className={modalStyles.copyLinkButton}
+                                        onClick={() => navigator.clipboard.writeText(currentGenericLink).then(() => alert('Link copied!'))}
+                                    >
+                                        Copy Link
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={handleCreateGenericInvitation}
+                                    className={modalStyles.createLinkButton}
+                                    disabled={isAddModalLoading}
+                                >
+                                    {loadingAddGeneric ? 'Generating Link...' : 'Generate Generic Link'}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

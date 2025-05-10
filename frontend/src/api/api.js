@@ -98,3 +98,15 @@ export async function deleteEvent(uuid, editUuid) {
 export async function deleteParticipantAsAdmin(participantId, editUuid) {
     return fetchData(`participant/${participantId}/${editUuid}/`, {method: 'DELETE'});
 }
+
+export async function createGenericInvitation(eventUuid, editUuid) {
+    const body = {
+        event: eventUuid,
+        event_edit_uuid: editUuid
+    };
+    return sendData('invitation/create/', 'POST', body);
+}
+
+export async function deleteGenericInvitation(invitationUuid, editUuid) {
+    return fetchData(`invitation/delete/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
+}
