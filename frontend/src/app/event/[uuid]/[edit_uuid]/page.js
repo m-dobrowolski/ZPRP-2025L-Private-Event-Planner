@@ -40,36 +40,44 @@ export default function EditEventPage() {
             return;
         }
 
-        const fetchEvent = async () => {
-            setLoadingFetch(true);
-            setErrorFetch(null);
-            try {
-                const data = await getEventAdminDetails(uuid, edit_uuid);
+    const fetchEventData = async () => {
+        setLoadingFetch(true);
+        setErrorFetch(null);
+        try {
+            const data = await getEventAdminDetails(uuid, edit_uuid);
 
-                setFormData({
-                    name: data.name || '',
-                    location: data.location || '',
-                    start_datetime: data.start_datetime ? new Date(data.start_datetime).toISOString().slice(0, 16) : '',
-                    end_datetime: data.end_datetime ? new Date(data.end_datetime).toISOString().slice(0, 16) : '',
-                    organizer_email: data.organizer_email || '',
-                    description: data.description || '',
-                    link: data.link || '',
-                    image: null,
-                    current_image_url: data.image || '',
-                    organizer_name: data.organizer_name || '',
-                    participants_limit: data.participants_limit || '',
-                });
-                setImagePreview(data.image || null);
+            setFormData({
+                name: data.name || '',
+                location: data.location || '',
+                start_datetime: data.start_datetime ? new Date(data.start_datetime).toISOString().slice(0, 16) : '',
+                end_datetime: data.end_datetime ? new Date(data.end_datetime).toISOString().slice(0, 16) : '',
+                organizer_email: data.organizer_email || '',
+                description: data.description || '',
+                link: data.link || '',
+                image: null,
+                current_image_url: data.image || '',
+                organizer_name: data.organizer_name || '',
+                participants_limit: data.participants_limit || '',
+            });
+            setImagePreview(data.image || null);
 
-            } catch (err) {
-                setErrorFetch(err.message || 'Failed to fetch event for editing. Check UUIDs.');
-                console.error('Error fetching event for edit:', err);
-            } finally {
-                setLoadingFetch(false);
-            }
-        };
+            setParticipants(data.participants || []);
 
-        fetchEvent();
+        } catch (err) {
+            setErrorFetch(err.message || 'Failed to fetch event for editing. Check UUIDs.');
+            console.error('Error fetching event for edit:', err);
+        } finally {
+            setLoadingFetch(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!uuid || !edit_uuid) {
+            setLoadingFetch(false);
+            setErrorFetch("Event identifier or edit key is missing.");
+            return;
+        }
+        fetchEventData();
 
     }, [uuid, edit_uuid]);
 
@@ -310,6 +318,24 @@ export default function EditEventPage() {
              >
                  {loadingDelete ? 'Deleting...' : 'Delete Event'}
              </button>
+
+            {/* --- Participants Section --- */}
+            <div className={styles.section}>
+                <h2>Participants ({participants.length})</h2>
+                {participants.length > 0 ? (
+                    <ul className={styles.participantList}>
+                        {participants.map(participant => (
+                            <li key={participant.id} className={styles.participantItem}>
+                                <span>
+                                    {participant.name} {participant.email ? `(${participant.email})` : ''}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>No participants have joined yet.</p>
+                )}
+            </div>
 
         </div>
     );
