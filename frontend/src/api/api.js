@@ -24,12 +24,20 @@ async function fetchData(url, options = {}) {
 }
 
 async function sendData(url, method, body) {
-    try {
-        const options = {
-            method: method,
-            body: body,
-        };
+    const options = {
+        method: method,
+    };
 
+    if ((method === 'POST' || method === 'PATCH') && !(body instanceof FormData)) {
+        options.body = JSON.stringify(body);
+        options.headers = {
+            'Content-Type': 'application/json'
+        };
+    } else {
+        options.body = body;
+    }
+
+    try {
         const response = await fetch(API_BASE_URL + url, options);
 
         if (!response.ok) {
@@ -40,21 +48,24 @@ async function sendData(url, method, body) {
             } catch(e) {
                 // ignore error parsing error
             }
-            throw new Error(errorDetail);
+            const error = new Error(errorDetail);
+            error.response = response;
+            throw error;
         }
 
         if (response.status === 204) {
             return null;
         }
 
-        const text = await response.text();
-        if (text.length === 0) {
-            return null;
-        }
-        try {
-            return JSON.parse(text);
-        } catch (e) {
-            console.warn("API response was not JSON:", text);
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            return await response.json();
+        } else {
+            const text = await response.text();
+            if (text.length === 0) {
+                return null;
+            }
+            console.warn("API response was not JSON:", url, text);
             return text;
         }
 
@@ -80,7 +91,10 @@ export async function updateEvent(uuid, editUuid, formData) {
     return sendData(`event/${uuid}/${editUuid}/`, 'PATCH', formData);
 }
 
-// New: Delete event
 export async function deleteEvent(uuid, editUuid) {
     return fetchData(`event/${uuid}/${editUuid}/`, { method: 'DELETE' });
+}
+
+export async function deleteParticipantAsAdmin(participantId, editUuid) {
+    return fetchData(`participant/${participantId}/${editUuid}/`, {method: 'DELETE'});
 }

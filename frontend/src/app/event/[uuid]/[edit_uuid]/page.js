@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getEventAdminDetails, updateEvent, deleteEvent } from '@/api/api';
+import {
+    getEventAdminDetails,
+    updateEvent,
+    deleteEvent,
+    deleteParticipantAsAdmin,
+} from '@/api/api';
 import styles from './editEvent.module.css';
 
 export default function EditEventPage() {
@@ -25,24 +30,29 @@ export default function EditEventPage() {
         participants_limit: '',
     });
 
-    const [loadingFetch, setLoadingFetch] = useState(true);
-    const [loadingSave, setLoadingSave] = useState(false);
-    const [loadingDelete, setLoadingDelete] = useState(false);
-    const [errorFetch, setErrorFetch] = useState(null);
-    const [errorSave, setErrorSave] = useState(null);
-    const [errorDelete, setErrorDelete] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
 
-    useEffect(() => {
-        if (!uuid || !edit_uuid) {
-            setLoadingFetch(false);
-            setErrorFetch("Event identifier or edit key is missing.");
-            return;
-        }
+    // Participant states
+    const [participants, setParticipants] = useState([]);
+
+    // Loading states
+    const [loadingFetch, setLoadingFetch] = useState(true);
+    const [loadingSave, setLoadingSave] = useState(false);
+    const [loadingDeleteEvent, setLoadingDeleteEvent] = useState(false);
+    const [deletingParticipantId, setDeletingParticipantId] = useState(null);
+
+    // Error states
+    const [errorFetch, setErrorFetch] = useState(null);
+    const [errorSave, setErrorSave] = useState(null);
+    const [errorDeleteEvent, setErrorDeleteEvent] = useState(null);
+    const [errorDeleteParticipant, setErrorDeleteParticipant] = useState(null);
+
 
     const fetchEventData = async () => {
         setLoadingFetch(true);
         setErrorFetch(null);
+        setErrorDeleteParticipant(null);
+
         try {
             const data = await getEventAdminDetails(uuid, edit_uuid);
 
@@ -146,13 +156,13 @@ export default function EditEventPage() {
         }
     };
 
-    const handleDelete = async () => {
+    const handleDeleteEvent = async () => {
         if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
             return;
         }
 
-        setLoadingDelete(true);
-        setErrorDelete(null);
+        setLoadingDeleteEvent(true);
+        setErrorDeleteEvent(null);
 
         try {
             await deleteEvent(uuid, edit_uuid);
@@ -160,11 +170,34 @@ export default function EditEventPage() {
 
         } catch (error) {
             console.error('Error deleting event:', error);
-            setErrorDelete(error.message || 'Failed to delete event.');
+            setErrorDeleteEvent(error.message || 'Failed to delete event.');
         } finally {
-            setLoadingDelete(false);
+            setLoadingDeleteEvent(false);
         }
     };
+
+    const handleDeleteParticipant = async (participantId, participantName) => {
+         if (!confirm(`Are you sure you want to delete participant "${participantName}"?`)) {
+             return;
+         }
+
+         setDeletingParticipantId(participantId);
+         setErrorDeleteParticipant(null);
+
+         try {
+             await deleteParticipantAsAdmin(participantId, edit_uuid);
+             setParticipants(participants.filter(p => p.id !== participantId));
+             alert(`Participant "${participantName}" deleted successfully.`);
+
+         } catch (error) {
+             console.error(`Error deleting participant ${participantId}:`, error);
+             const errorMessage = error.response?.data?.detail || error.message || `Failed to delete participant "${participantName}".`;
+             setErrorDeleteParticipant(errorMessage);
+         } finally {
+             setDeletingParticipantId(null);
+         }
+    };
+    const isMainActionLoading = loadingSave || loadingDeleteEvent || deletingParticipantId !== null;
 
     if (loadingFetch) {
         return <div className={styles.container}>Loading event for editing...</div>;
@@ -179,7 +212,8 @@ export default function EditEventPage() {
         <div className={styles.container}>
             <h1 className={styles.title}>Edit Event: {formData.name || 'Event'}</h1>
             {errorSave && <div className={styles.error}>{errorSave}</div>}
-            {errorDelete && <div className={styles.error}>{errorDelete}</div>}
+            {errorDeleteEvent && <div className={styles.error}>{errorDeleteEvent}</div>}
+            {errorDeleteParticipant && <div className={styles.error}>{errorDeleteParticipant}</div>}
 
             <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
@@ -306,17 +340,17 @@ export default function EditEventPage() {
                     />
                 </div>
 
-                <button type="submit" className={styles.submitButton} disabled={loadingSave || loadingDelete}>
+                <button type="submit" className={styles.submitButton} disabled={loadingSave || loadingDeleteEvent}>
                     {loadingSave ? 'Saving...' : 'Save Changes'}
                 </button>
             </form>
 
              <button
                  className={styles.deleteButton}
-                 onClick={handleDelete}
-                 disabled={loadingSave || loadingDelete}
+                 onClick={handleDeleteEvent}
+                 disabled={loadingSave || loadingDeleteEvent}
              >
-                 {loadingDelete ? 'Deleting...' : 'Delete Event'}
+                 {loadingDeleteEvent ? 'Deleting...' : 'Delete Event'}
              </button>
 
             {/* --- Participants Section --- */}
@@ -329,6 +363,13 @@ export default function EditEventPage() {
                                 <span>
                                     {participant.name} {participant.email ? `(${participant.email})` : ''}
                                 </span>
+                                <button
+                                    className={styles.deleteParticipantButton}
+                                    onClick={() => handleDeleteParticipant(participant.id, participant.name || 'Unnamed Participant')}
+                                    disabled={deletingParticipantId === participant.id || isMainActionLoading}
+                                >
+                                    {deletingParticipantId === participant.id ? 'Deleting...' : 'Delete'}
+                                </button>
                             </li>
                         ))}
                     </ul>
