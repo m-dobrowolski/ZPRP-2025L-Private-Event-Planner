@@ -45,7 +45,8 @@ export default function EditEventPage() {
 
     // Add participant modal
     const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
-    const [addPersonalizedFormData, setAddPersonalizedFormData] = useState({ name: '', email: '' });
+    const [addPersonalizedFormData, setAddPersonalizedFormData] = useState({ name: '' });
+    const [createdPersonalizedLink, setCreatedPersonalizedLink] = useState(null);
     const [loadingAddPersonalized, setLoadingAddPersonalized] = useState(false);
     const [loadingAddGeneric, setLoadingAddGeneric] = useState(false);
     const [errorAddPersonalized, setErrorAddPersonalized] = useState(null);
@@ -267,7 +268,8 @@ export default function EditEventPage() {
 
     const openAddParticipantModal = () => {
          setShowAddParticipantModal(true);
-         setAddPersonalizedFormData({ name: '', email: '' });
+         setAddPersonalizedFormData({ name: '' });
+         setCreatedPersonalizedLink(null);
          setErrorAddPersonalized(null);
          setErrorAddGeneric(null);
     };
@@ -286,8 +288,8 @@ export default function EditEventPage() {
         setLoadingAddPersonalized(true);
         setErrorAddPersonalized(null);
 
-        if (!addPersonalizedFormData.name || !addPersonalizedFormData.email) {
-            setErrorAddPersonalized('Please enter both name and email for the personalized invitation.');
+        if (!addPersonalizedFormData.name) {
+            setErrorAddPersonalized('Please enter a name for the personalized invitation.');
             setLoadingAddPersonalized(false);
             return;
         }
@@ -299,12 +301,19 @@ export default function EditEventPage() {
                 addPersonalizedFormData.name,
             );
             console.log('Personalized invitation created:', response);
-            alert(`Invitation sent to ${addPersonalizedFormData.email}!`);
-            // Clear the form
-            setAddPersonalizedFormData({ name: '', email: '' });
+
+            if (response && response.uuid) {
+                 const invitationLink = `${window.location.origin}/personalized-invitation/accept/${response.uuid}`;
+                 setCreatedPersonalizedLink(invitationLink);
+                 setPersonalizedInvitations(prev => [...prev, response]);
+                 setAddPersonalizedFormData({ name: '' });
+
+            } else {
+                console.error('API response missing invitation UUID:', response);
+                setErrorAddPersonalized('Failed to create personalized invitation. Invalid response from server.');
+            }
 
             await fetchEventData();
-
 
         } catch (error) {
             console.error('Error creating personalized invitation:', error);
@@ -338,6 +347,15 @@ export default function EditEventPage() {
          } finally {
              setLoadingAddGeneric(false);
          }
+    };
+
+    const copyToClipboard = (text, message) => {
+         navigator.clipboard.writeText(text).then(() => {
+             alert(message || 'Link copied to clipboard!');
+         }).catch(err => {
+             console.error('Failed to copy text: ', err);
+             alert('Failed to copy link.');
+         });
     };
 
     const currentGenericLink = genericInvitations.length > 0 ?
@@ -553,6 +571,12 @@ export default function EditEventPage() {
                                     </Link>
                                 </span>
                                 <button
+                                    className={styles.copyLinkButton} // Reusing generic copy button style
+                                    onClick={() => copyToClipboard(`${window.location.origin}/invitation/accept/${invitation.uuid}`, 'Generic link copied!')}
+                                >
+                                    Copy Link
+                                </button>
+                                <button
                                     className={styles.deleteInvitationButton}
                                     onClick={() => handleDeleteGenericInvitation(invitation.uuid)}
                                     disabled={deletingGenericInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
@@ -573,8 +597,15 @@ export default function EditEventPage() {
                         {personalizedInvitations.map(invitation => (
                             <li key={invitation.uuid} className={styles.invitationItem}>
                                  <span>
-                                     <strong>{invitation.name}</strong> ({invitation.email}) - Link: <Link href={`/personalized-invitation/accept/${invitation.uuid}`} target="_blank" rel="noopener noreferrer">Accept</Link>
+                                     <strong>{invitation.name}</strong>
                                  </span>
+                                 <button
+                                     className={styles.copyLinkButton}
+                                     onClick={() => copyToClipboard(`${window.location.origin}/personalized-invitation/accept/${invitation.uuid}`, `Link for ${invitation.name} copied!`)}
+                                     disabled={deletingPersonalizedInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
+                                 >
+                                     Copy Link
+                                 </button>
                                  <button
                                     className={styles.deleteInvitationButton}
                                     onClick={() => handleDeletePersonalizedInvitation(invitation.uuid, invitation.name || invitation.email || 'Unnamed Invitation')}
@@ -604,36 +635,55 @@ export default function EditEventPage() {
 
                         <div className={modalStyles.section}>
                             <h3>Send Personalized Invitation</h3>
-                            <p>Send an invitation email to a specific person.</p>
-                            <form onSubmit={handleAddPersonalizedSubmit} className={modalStyles.form}>
-                                <div className={modalStyles.formGroup}>
-                                    <label className={modalStyles.label}>Name</label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={addPersonalizedFormData.name}
-                                        onChange={handleAddPersonalizedChange}
-                                        className={modalStyles.input}
-                                        required
+                            {createdPersonalizedLink ? (
+                               <div className={modalStyles.genericLinkBox}>
+                                    <strong>Personalized Invitation Link:</strong>
+                                    <p>
+                                        <Link href={createdPersonalizedLink} target="_blank" rel="noopener noreferrer">
+                                            {createdPersonalizedLink}
+                                        </Link>
+                                    </p>
+                                    <small>Share this link directly with the person.</small>
+                                    <button
+                                        className={modalStyles.copyLinkButton}
+                                        onClick={() => copyToClipboard(createdPersonalizedLink, 'Personalized link copied!')}
+                                    >
+                                        Copy Link
+                                    </button>
+                                    <button
+                                        className={modalStyles.createLinkButton}
+                                        onClick={() => {
+                                            setCreatedPersonalizedLink(null);
+                                            setAddPersonalizedFormData({ name: '' });
+                                            setErrorAddPersonalized(null);
+                                        }}
                                         disabled={isAddModalLoading}
-                                     />
-                                </div>
-                                <div className={modalStyles.formGroup}>
-                                    <label className={modalStyles.label}>Email</label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={addPersonalizedFormData.email}
-                                        onChange={handleAddPersonalizedChange}
-                                        className={modalStyles.input}
-                                        required
-                                        disabled={isAddModalLoading}
-                                    />
-                                </div>
-                                <button type="submit" className={modalStyles.submitButton} disabled={isAddModalLoading}>
-                                    {loadingAddPersonalized ? 'Sending...' : 'Send Invitation'}
-                                </button>
-                            </form>
+                                    >
+                                        Send Another Invitation
+                                    </button>
+                               </div>
+                           ) : (
+                               <>
+                                <p>Create an invitation link for a specific person by name.</p>
+                                <form onSubmit={handleAddPersonalizedSubmit} className={modalStyles.form}>
+                                    <div className={modalStyles.formGroup}>
+                                        <label className={modalStyles.label}>Name</label>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={addPersonalizedFormData.name}
+                                            onChange={handleAddPersonalizedChange}
+                                            className={modalStyles.input}
+                                            required
+                                            disabled={isAddModalLoading}
+                                        />
+                                    </div>
+                                    <button type="submit" className={modalStyles.submitButton} disabled={isAddModalLoading || !addPersonalizedFormData.name.trim()}> {/* Disable if name is empty */}
+                                        {loadingAddPersonalized ? 'Creating...' : 'Create Personalized Link'}
+                                    </button>
+                                </form>
+                               </>
+                           )}
                         </div>
 
                         <div className={modalStyles.section}>
