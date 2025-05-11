@@ -133,6 +133,15 @@ class AcceptInvitationSerializer(serializers.ModelSerializer):
         return Participant.objects.create(**validated_data)
 
 
+class InvitationDetailsSerializer(serializers.ModelSerializer):
+    event_name = serializers.CharField(source='event.name', read_only=True)
+    event_uuid = serializers.UUIDField(source='event.uuid', read_only=True)
+
+    class Meta:
+        model = Invitation
+        fields = ['event_name', 'event_uuid']
+
+
 class AcceptPersonalizedInvitationSerializer(AcceptInvitationSerializer):
     invitation = serializers.SlugRelatedField(slug_field='uuid', write_only=True,
                                               queryset=PersonalizedInvitation.objects.all(), many=False)
