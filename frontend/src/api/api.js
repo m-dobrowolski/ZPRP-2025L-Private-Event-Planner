@@ -136,3 +136,16 @@ export async function createPersonalizedInvitation(eventUuid, editUuid, name) {
 export async function deletePersonalizedInvitation(invitationUuid, editUuid) {
     return fetchData(`personalized-invitation/delete/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
 }
+
+export async function acceptPersonalizedInvitation(invitationUuid, name, email) {
+    const body = {
+        invitation: invitationUuid,
+        name: name,
+        email: email
+    };
+     return sendData(`personalized-invitation/accept/`, 'POST', body);
+}
+
+export async function getPersonalizedInvitationDetails(invitationUuid) {
+     return fetchData(`personalized-invitation/details/${invitationUuid}/`);
+}
