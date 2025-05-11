@@ -145,8 +145,7 @@ export default function EditEventPage() {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         setLoadingSave(true);
         setErrorSave(null);
 
@@ -508,19 +507,7 @@ export default function EditEventPage() {
                         min="1"
                     />
                 </div>
-
-                <button type="submit" className={styles.submitButton} disabled={loadingSave || loadingDeleteEvent}>
-                    {loadingSave ? 'Saving...' : 'Save Changes'}
-                </button>
             </form>
-
-             <button
-                 className={styles.deleteButton}
-                 onClick={handleDeleteEvent}
-                 disabled={loadingSave || loadingDeleteEvent}
-             >
-                 {loadingDeleteEvent ? 'Deleting...' : 'Delete Event'}
-             </button>
 
             {/* --- Participants Section --- */}
             <div className={styles.section}>
@@ -550,14 +537,6 @@ export default function EditEventPage() {
             {/* --- Invitations Section --- */}
             <div className={styles.section}>
                 <h2>Invitations</h2>
-
-                <button
-                    onClick={openAddParticipantModal}
-                    className={styles.submitButton}
-                    disabled={isMainActionLoading || isAddModalLoading}
-                >
-                    Add New Participant / Invitation
-                </button>
 
                 {/* Generic Invitations */}
                 <h3>Generic Invitation Links ({genericInvitations.length})</h3>
@@ -619,7 +598,30 @@ export default function EditEventPage() {
                 ) : (
                     <p>No personalized invitations have been sent yet.</p>
                 )}
+                <button
+                    onClick={openAddParticipantModal}
+                    className={styles.submitButton}
+                    disabled={isMainActionLoading || isAddModalLoading}
+                >
+                    Add New Participant / Invitation
+                </button>
 
+                <button
+                    type="button"
+                    className={styles.submitButton}
+                    onClick={handleSubmit}
+                    disabled={loadingSave || loadingDeleteEvent}
+                >
+                    {loadingSave ? 'Saving...' : 'Save Changes'}
+                </button>
+
+                <button
+                    className={styles.deleteButton}
+                    onClick={handleDeleteEvent}
+                    disabled={loadingSave || loadingDeleteEvent}
+                >
+                    {loadingDeleteEvent ? 'Deleting...' : 'Delete Event'}
+                </button>
             </div>
 
             {/* --- Add Participant Modal --- */}
