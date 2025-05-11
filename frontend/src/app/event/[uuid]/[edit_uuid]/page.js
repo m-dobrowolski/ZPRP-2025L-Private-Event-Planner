@@ -539,7 +539,7 @@ export default function EditEventPage() {
                 <h2>Invitations</h2>
 
                 {/* Generic Invitations */}
-                <h3>Generic Invitation Links ({genericInvitations.length})</h3>
+                <h3>Universal Invitation Link</h3>
                 {genericInvitations.length > 0 ? (
                     <ul className={styles.invitationList}>
                         {genericInvitations.map(invitation => (
@@ -566,7 +566,7 @@ export default function EditEventPage() {
                         ))}
                     </ul>
                 ) : (
-                    <p>No generic invitation link has been created yet.</p>
+                    <p>No universal invitation link has been created yet.</p>
                 )}
 
                 {/* Personalized Invitations */}
@@ -627,7 +627,7 @@ export default function EditEventPage() {
             {/* --- Add Participant Modal --- */}
             {showAddParticipantModal && (
                 <div className={modalStyles.modalOverlay} onClick={closeAddParticipantModal}>
-                    <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}> //{/* Prevent clicks inside closing the modal */}
+                    <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}> {/* Prevent clicks inside closing the modal */}
                         <button className={modalStyles.closeButton} onClick={closeAddParticipantModal}>×</button>
                         <h2>Add Participant or Invitation</h2>
 
