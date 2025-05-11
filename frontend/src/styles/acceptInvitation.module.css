@@ -2,28 +2,28 @@
     max-width: 500px;
     margin: 50px auto;
     padding: 20px;
-    background-color: #fff;
+    background-color: #454545;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-align: center;
 }
 
 .title {
-    color: #333;
+    color: #ededed;
     margin-bottom: 20px;
 }
 
 .eventContext {
     margin-bottom: 20px;
     padding: 15px;
-    background-color: #e9ecef;
+    background-color: #5d5d5d;
     border-radius: 4px;
     text-align: left;
 }
 
 .eventContext p {
     margin: 0;
-    color: #555;
+    color: #d7d7d7;
 }
 
 
@@ -40,7 +40,7 @@
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    color: #555;
+    color: #d7d7d7;
     font-size: 0.95rem;
 }
 
