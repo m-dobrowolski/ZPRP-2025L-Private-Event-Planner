@@ -158,3 +158,13 @@ class AcceptPersonalizedInvitationSerializer(AcceptInvitationSerializer):
             participant = Participant.objects.create(**validated_data)
             invitation.delete()
         return participant
+
+class PersonalizedInvitationDetailsSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(read_only=True)
+    event_name = serializers.CharField(source='event.name', read_only=True)
+    event_uuid = serializers.UUIDField(source='event.uuid', read_only=True)
+
+    class Meta:
+        model = PersonalizedInvitation
+        fields = ['uuid', 'name', 'event_name', 'event_uuid']
+        read_only_fields = ['uuid', 'name', 'event_name', 'event_uuid']

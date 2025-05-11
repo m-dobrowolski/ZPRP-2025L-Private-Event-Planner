@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from django.http import Http404, HttpResponse
 from .serializers import EventSerializer, InvitationSerializer, PersonalizedInvitationSerializer,\
                          AcceptInvitationSerializer, AcceptPersonalizedInvitationSerializer,\
-                         InvitationDetailsSerializer,\
+                         InvitationDetailsSerializer, PersonalizedInvitationDetailsSerializer,\
                          EventAdminSerializer, EventSerializer, CommentSerializer
 from .models import Event, Invitation, PersonalizedInvitation, Participant, \
                             Comment
@@ -200,6 +200,21 @@ class PersonalizedInvitationDelete(APIView):
         invitation = self.get_object(uuid, edit_uuid)
         invitation.delete()
         return Response(status=204)
+
+
+class PersonalizedInvitationDetails(APIView):
+    serializer_class = PersonalizedInvitationDetailsSerializer
+
+    def get_object(self, uuid):
+        try:
+            return PersonalizedInvitation.objects.get(uuid=uuid)
+        except PersonalizedInvitation.DoesNotExist:
+            raise Http404
+
+    def get(self, request, uuid, format=None):
+        invitation = self.get_object(uuid)
+        serializer = PersonalizedInvitationDetailsSerializer(invitation)
+        return Response(serializer.data, status=200)
 
 
 class LeaveEvent(APIView):

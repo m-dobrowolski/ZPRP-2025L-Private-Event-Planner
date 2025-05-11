@@ -15,6 +15,7 @@ urlpatterns = [
     path('invitation/delete/<uuid:uuid>/<uuid:edit_uuid>/', views.InvitationDelete.as_view(), name='invitation-delete'),
     path('personalized-invitation/create/', views.PersonalizedInvitationCreate.as_view(), name='personalized-invitation-create'),
     path('personalized-invitation/accept/', views.PersonalizedInvitationAccept.as_view(), name='personalized-invitation-accept'),
+    path('personalized-invitation/details/<uuid:uuid>/', views.PersonalizedInvitationDetails.as_view(), name='personalized-invitation-details'),
     path('personalized-invitation/delete/<uuid:uuid>/<uuid:edit_uuid>/', views.PersonalizedInvitationDelete.as_view(), name='personalized-invitation-delete'),
     path('participant/<uuid:uuid>/', views.LeaveEvent.as_view(), name='leave-event'),
     path('participant/<int:id>/<uuid:edit_uuid>/', views.DeleteParticipantAsAdmin.as_view(), name='delete-participant-admin'),
