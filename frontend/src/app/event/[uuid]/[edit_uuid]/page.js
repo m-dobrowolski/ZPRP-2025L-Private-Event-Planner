@@ -149,12 +149,6 @@ export default function EditEventPage() {
         setLoadingSave(true);
         setErrorSave(null);
 
-        if (!formData.name || !formData.location || !formData.start_datetime || !formData.end_datetime || !formData.organizer_email) {
-            setErrorSave('Please fill in all required fields.');
-            setLoadingSave(false);
-            return;
-        }
-
         try {
             const formDataToSend = new FormData();
             for (const key in formData) {
@@ -383,7 +377,7 @@ export default function EditEventPage() {
             {errorDeleteGenericInvitation && <div className={styles.error}>{errorDeleteGenericInvitation}</div>}
             {errorDeletePersonalizedInvitation && <div className={styles.error}>{errorDeletePersonalizedInvitation}</div>}
 
-            <form onSubmit={handleSubmit} className={styles.form}>
+            <form id="editEventForm" onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
                     <label className={styles.label}>Event Name*</label>
                     <input
@@ -550,7 +544,7 @@ export default function EditEventPage() {
                                     </Link>
                                 </span>
                                 <button
-                                    className={styles.copyLinkButton} // Reusing generic copy button style
+                                    className={styles.copyLinkButton}
                                     onClick={() => copyToClipboard(`${window.location.origin}/invitation/accept/${invitation.uuid}`, 'Generic link copied!')}
                                 >
                                     Copy Link
@@ -607,9 +601,10 @@ export default function EditEventPage() {
                 </button>
 
                 <button
-                    type="button"
+                    type="submit"
+                    form={"editEventForm"}
                     className={styles.submitButton}
-                    onClick={handleSubmit}
+                    // onClick={handleSubmit}
                     disabled={loadingSave || loadingDeleteEvent}
                 >
                     {loadingSave ? 'Saving...' : 'Save Changes'}
