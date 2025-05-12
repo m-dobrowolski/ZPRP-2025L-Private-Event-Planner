@@ -77,6 +77,99 @@
      font-size: 0.875rem;
 }
 
+.error {
+    color: #dc3545;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 500;
+}
+
+.section {
+     margin-top: 2.5rem;
+     padding-top: 1.5rem;
+     border-top: 1px solid #eee;
+}
+
+.section:first-of-type {
+     margin-top: 0;
+     padding-top: 0;
+     border-top: none;
+}
+
+.section h2, .section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.participantList, .invitationList {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+    overflow: hidden;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.participantItem, .invitationItem {
+    background-color: #454545;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    word-break: break-word;
+    flex-wrap: wrap;
+}
+
+.participantItem span, .invitationItem span {
+    flex-grow: 1;
+    margin-right: 1rem;
+    min-width: 0;
+}
+
+.deleteParticipantButton,
+.deleteInvitationButton,
+.copyLinkButton {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+    margin-top: 0.2rem;
+    margin-bottom: 0.2rem;
+}
+
+.deleteParticipantButton,
+.deleteInvitationButton {
+    background-color: #dc3545;
+    color: white;
+}
+
+.deleteParticipantButton:hover:not(:disabled),
+.deleteInvitationButton:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+.copyLinkButton {
+    background-color: #6c757d;
+    color: white;
+}
+
+.copyLinkButton:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+.deleteParticipantButton:disabled,
+.deleteInvitationButton:disabled,
+.copyLinkButton:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
 
 .submitButton {
     background-color: #000;
@@ -88,6 +181,7 @@
     cursor: pointer;
     width: 100%;
     transition: background-color 0.2s;
+    margin-top: 2rem;
 }
 
 .submitButton:hover:not(:disabled) {
@@ -103,7 +197,7 @@
     display: block;
     width: 100%;
     padding: 0.75rem 1.5rem;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     background-color: #dc3545;
     color: white;
     border: none;
@@ -120,11 +214,4 @@
 .deleteButton:disabled {
     background-color: #ccc;
     cursor: not-allowed;
-}
-
-.error {
-    color: #dc3545;
-    margin-bottom: 1.5rem;
-    text-align: center;
-    font-weight: 500;
 }

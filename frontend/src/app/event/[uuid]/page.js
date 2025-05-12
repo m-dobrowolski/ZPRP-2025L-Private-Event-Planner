@@ -9,6 +9,7 @@ export default function EventDetailPage() {
     const uuid = params.uuid;
 
     const [eventData, setEventData] = useState(null);
+    const [participants, setParticipants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -21,6 +22,7 @@ export default function EventDetailPage() {
             try {
                 const data = await getEventDetails(uuid);
                 setEventData(data);
+                setParticipants(data.participants || []);
             } catch (err) {
                 setError(err.message || 'Failed to fetch event details.');
                 console.error('Error fetching event:', err);
@@ -67,10 +69,10 @@ export default function EventDetailPage() {
             {/* Display current image if available */}
             {eventData.image && (
                 <div className={styles.imageContainer}>
-                    {/* Assuming eventData.image is a URL? */}
                     <img src={eventData.image} alt={eventData.name || 'Event Image'} className={styles.image} />
                 </div>
             )}
+
 
             <div className={styles.detailItem}>
                 <strong>Location:</strong> {eventData.location}
@@ -82,31 +84,47 @@ export default function EventDetailPage() {
                 <strong>End Time:</strong> {formatDateTime(eventData.end_datetime)}
             </div>
             {eventData.organizer_name && (
-                 <div className={styles.detailItem}>
+                <div className={styles.detailItem}>
                     <strong>Organizer:</strong> {eventData.organizer_name}
-                 </div>
+                </div>
             )}
-             {eventData.organizer_email && (
-                 <div className={styles.detailItem}>
+            {eventData.organizer_email && (
+                <div className={styles.detailItem}>
                     <strong>Organizer Email:</strong> {eventData.organizer_email}
-                 </div>
-             )}
+                </div>
+            )}
             {eventData.description && (
-                 <div className={styles.detailItem}>
+                <div className={styles.detailItem}>
                     <strong>Description:</strong> <p>{eventData.description}</p>
-                 </div>
-             )}
-             {eventData.link && (
-                 <div className={styles.detailItem}>
+                </div>
+            )}
+            {eventData.link && (
+                <div className={styles.detailItem}>
                     <strong>More Info:</strong> <a href={eventData.link} target="_blank" rel="noopener noreferrer">{eventData.link}</a>
-                 </div>
-             )}
+                </div>
+            )}
             {eventData.participants_limit !== null && eventData.participants_limit !== undefined && eventData.participants_limit !== '' && (
-                 <div className={styles.detailItem}>
+                <div className={styles.detailItem}>
                     <strong>Participants Limit:</strong> {eventData.participants_limit}
-                 </div>
-             )}
-             {/* Maybe add participant list here */}
+                </div>
+            )}
+
+            <div className={styles.section}>
+                <h2>Participants ({participants.length})</h2>
+                {participants.length > 0 ? (
+                    <ul className={styles.participantList}>
+                        {participants.map(participant => (
+                            <li key={participant.id} className={styles.participantItem}>
+                                <span>
+                                    {participant.name} {participant.email ? `(${participant.email})` : ''}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>No participants have joined yet.</p>
+                )}
+            </div>
         </div>
     );
 }

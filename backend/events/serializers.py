@@ -84,6 +84,19 @@ class EventAdminSerializer(serializers.ModelSerializer):
         model = Event
         fields = "__all__"
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        if instance.image and hasattr(instance.image, 'url'):
+             request = self.context.get('request')
+             if request is not None:
+                 full_url = request.build_absolute_uri(instance.image.url)
+                 representation['image'] = full_url
+             else:
+                 representation['image'] = f"http://localhost:8000{instance.image.url}"
+
+        return representation
+
     def validate_participants_limit(self, value):
         if value is not None and value < 1:
             raise serializers.ValidationError("Participants limit must be greater than 0.")
@@ -102,12 +115,22 @@ class EventSerializer(serializers.ModelSerializer):
     """Used for retrieving events as a participant."""
     participants = ParticipantSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
         fields = ['uuid', 'name', 'location', 'start_datetime', 'end_datetime',
                   'organizer_email', 'description', 'link', 'image', 'organizer_name',
                   'participants_limit', 'participants', 'comments']
+
+    def get_image(self, obj):
+        if obj.image and hasattr(obj.image, 'url'):
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            else:
+                return f"http://localhost:8000{obj.image.url}"
+        return None
 
 
 class AcceptInvitationSerializer(serializers.ModelSerializer):
@@ -133,6 +156,15 @@ class AcceptInvitationSerializer(serializers.ModelSerializer):
         return Participant.objects.create(**validated_data)
 
 
+class InvitationDetailsSerializer(serializers.ModelSerializer):
+    event_name = serializers.CharField(source='event.name', read_only=True)
+    event_uuid = serializers.UUIDField(source='event.uuid', read_only=True)
+
+    class Meta:
+        model = Invitation
+        fields = ['event_name', 'event_uuid']
+
+
 class AcceptPersonalizedInvitationSerializer(AcceptInvitationSerializer):
     invitation = serializers.SlugRelatedField(slug_field='uuid', write_only=True,
                                               queryset=PersonalizedInvitation.objects.all(), many=False)
@@ -149,3 +181,13 @@ class AcceptPersonalizedInvitationSerializer(AcceptInvitationSerializer):
             participant = Participant.objects.create(**validated_data)
             invitation.delete()
         return participant
+
+class PersonalizedInvitationDetailsSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(read_only=True)
+    event_name = serializers.CharField(source='event.name', read_only=True)
+    event_uuid = serializers.UUIDField(source='event.uuid', read_only=True)
+
+    class Meta:
+        model = PersonalizedInvitation
+        fields = ['uuid', 'name', 'event_name', 'event_uuid']
+        read_only_fields = ['uuid', 'name', 'event_name', 'event_uuid']

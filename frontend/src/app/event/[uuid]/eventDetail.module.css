@@ -22,7 +22,6 @@
     border: 1px solid #ddd;
 }
 
-
 .detailItem {
     margin-bottom: 1.5rem;
     line-height: 1.5;
@@ -52,4 +51,49 @@
     color: #dc3545;
     text-align: center;
     margin-bottom: 1.5rem;
+}
+
+.section {
+     margin-top: 2.5rem;
+     padding-top: 1.5rem;
+     border-top: 1px solid #eee;
+}
+
+.section:first-of-type {
+     margin-top: 0;
+     padding-top: 0;
+     border-top: none;
+}
+
+.section h2, .section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.participantList {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+    overflow: hidden;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.participantItem {
+    background-color: #454545;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    word-break: break-word;
+    flex-wrap: wrap;
+}
+
+.participantItem span {
+    flex-grow: 1;
+    margin-right: 1rem;
+    min-width: 0;
 }
