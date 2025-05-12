@@ -530,7 +530,6 @@ export default function EditEventPage() {
 
             {/* --- Invitations Section --- */}
             <div className={styles.section}>
-                <h2>Invitations</h2>
 
                 {/* Generic Invitations */}
                 <h3>Universal Invitation Link</h3>
