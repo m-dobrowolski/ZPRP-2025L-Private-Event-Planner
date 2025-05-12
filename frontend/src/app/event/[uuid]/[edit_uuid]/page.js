@@ -474,21 +474,21 @@ export default function EditEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                     <label className={styles.label}>Event Image</label>
-                     {(imagePreview || formData.current_image_url) && (
-                         <div className={styles.imagePreviewContainer}>
-                             <img src={imagePreview || formData.current_image_url} alt="Image Preview" className={styles.imagePreview} />
-                         </div>
-                     )}
-                     <input
-                         type="file"
-                         name="image"
-                         onChange={handleChange}
-                         className={styles.fileInput}
-                         accept="image/*"
-                     />
-                      <small className={styles.helpText}>Select a new image to replace the current one.</small>
-                 </div>
+                    <label className={styles.label}>Event Image</label>
+                    {(imagePreview || formData.current_image_url) && (
+                        <div className={styles.imagePreviewContainer}>
+                            <img src={imagePreview || formData.current_image_url} alt="Image Preview" className={styles.imagePreview} />
+                        </div>
+                    )}
+                    <input
+                        type="file"
+                        name="image"
+                        onChange={handleChange}
+                        className={styles.fileInput}
+                        accept="image/*"
+                    />
+                        <small className={styles.helpText}>Select a new image to replace the current one.</small>
+                </div>
 
                 <div className={styles.formGroup}>
                     <label className={styles.label}>Participants Limit</label>

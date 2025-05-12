@@ -84,6 +84,19 @@ class EventAdminSerializer(serializers.ModelSerializer):
         model = Event
         fields = "__all__"
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        if instance.image and hasattr(instance.image, 'url'):
+             request = self.context.get('request')
+             if request is not None:
+                 full_url = request.build_absolute_uri(instance.image.url)
+                 representation['image'] = full_url
+             else:
+                 representation['image'] = f"http://localhost:8000{instance.image.url}"
+
+        return representation
+
     def validate_participants_limit(self, value):
         if value is not None and value < 1:
             raise serializers.ValidationError("Participants limit must be greater than 0.")
@@ -102,12 +115,22 @@ class EventSerializer(serializers.ModelSerializer):
     """Used for retrieving events as a participant."""
     participants = ParticipantSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
         fields = ['uuid', 'name', 'location', 'start_datetime', 'end_datetime',
                   'organizer_email', 'description', 'link', 'image', 'organizer_name',
                   'participants_limit', 'participants', 'comments']
+
+    def get_image(self, obj):
+        if obj.image and hasattr(obj.image, 'url'):
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            else:
+                return f"http://localhost:8000{obj.image.url}"
+        return None
 
 
 class AcceptInvitationSerializer(serializers.ModelSerializer):

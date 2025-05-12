@@ -69,10 +69,10 @@ export default function EventDetailPage() {
             {/* Display current image if available */}
             {eventData.image && (
                 <div className={styles.imageContainer}>
-                    {/* Assuming eventData.image is a URL? */}
                     <img src={eventData.image} alt={eventData.name || 'Event Image'} className={styles.image} />
                 </div>
             )}
+
 
             <div className={styles.detailItem}>
                 <strong>Location:</strong> {eventData.location}
