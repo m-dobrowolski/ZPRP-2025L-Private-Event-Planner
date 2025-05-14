@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { getEventDetails, getComments } from '@/api/api';
+import { getEventDetails, getComments, createComment } from '@/api/api';
 import styles from './eventDetail.module.css';
 
 export default function EventDetailPage() {
@@ -13,6 +13,10 @@ export default function EventDetailPage() {
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [popupError, setPopupError] = useState(null);
+    const [showCommentForm, setShowCommentForm] = useState(false);
+    const [newComment, setNewComment] = useState({ author_uuid: '', content: '' });
+    const [submittingComment, setSubmittingComment] = useState(false);
 
     useEffect(() => {
         if (!uuid) return;
@@ -54,6 +58,28 @@ export default function EventDetailPage() {
         }
     };
 
+    const showErrorPopup = (message) => {
+        setPopupError(message);
+        setTimeout(() => setPopupError(null), 3000);
+    };
+
+    const handleCommentSubmit = async (e) => {
+        e.preventDefault();
+        setSubmittingComment(true);
+        try {
+            await createComment(uuid, newComment.author_uuid, newComment.content);
+            const updatedComments = await getComments(uuid);
+            setComments(updatedComments);
+            setNewComment({ author_uuid: '', content: '' });
+            setShowCommentForm(false);
+        } catch (err) {
+            const errorMessage = err.message || 'Failed to add comment.';
+            showErrorPopup(errorMessage);
+            console.error('Error adding comment:', err);
+        } finally {
+            setSubmittingComment(false);
+        }
+    };
 
     if (loading) {
         return <div className={styles.container}>Loading event...</div>;
@@ -69,6 +95,11 @@ export default function EventDetailPage() {
 
     return (
         <div className={styles.container}>
+            {popupError && (
+                <div className={styles.errorPopup}>
+                    {popupError}
+                </div>
+            )}
             <h1 className={styles.title}>{eventData.name}</h1>
 
             {/* Display current image if available */}
@@ -133,6 +164,46 @@ export default function EventDetailPage() {
 
             <div className={styles.section}>
                 <h2>Comments ({comments.length})</h2>
+                <button
+                    className={styles.addCommentButton}
+                    onClick={() => setShowCommentForm(!showCommentForm)}
+                >
+                    {showCommentForm ? 'Cancel' : 'Add Comment'}
+                </button>
+
+                {showCommentForm && (
+                    <form onSubmit={handleCommentSubmit} className={styles.commentForm}>
+                        <div className={styles.formGroup}>
+                            <label htmlFor="author_uuid">Author UUID:</label>
+                            <input
+                                type="text"
+                                id="author_uuid"
+                                value={newComment.author_uuid}
+                                onChange={(e) => setNewComment(prev => ({ ...prev, author_uuid: e.target.value }))}
+                                required
+                                className={styles.input}
+                            />
+                        </div>
+                        <div className={styles.formGroup}>
+                            <label htmlFor="content">Comment:</label>
+                            <textarea
+                                id="content"
+                                value={newComment.content}
+                                onChange={(e) => setNewComment(prev => ({ ...prev, content: e.target.value }))}
+                                required
+                                className={styles.textarea}
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={submittingComment}
+                            className={styles.submitButton}
+                        >
+                            {submittingComment ? 'Submitting...' : 'Submit Comment'}
+                        </button>
+                    </form>
+                )}
+
                 {comments.length > 0 ? (
                     <ul className={styles.commentList}>
                         {comments.map(comment => (

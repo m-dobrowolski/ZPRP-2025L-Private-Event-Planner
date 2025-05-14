@@ -128,3 +128,91 @@
     white-space: pre-wrap;
     word-break: break-word;
 }
+
+.addCommentButton {
+    background-color: #454545;
+    border: 1px solid #dee2e6;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.addCommentButton:hover {
+    background-color: #333;
+}
+
+.commentForm {
+    background-color: #454545;;
+    border: 1px solid #dee2e6;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.formGroup {
+    margin-bottom: 16px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.input, .textarea {
+    background-color: #616161;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.submitButton {
+    background-color: #000;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.submitButton:hover {
+    background-color: #333;
+}
+
+.submitButton:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.errorPopup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #ff4444;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
