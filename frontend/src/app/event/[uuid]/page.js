@@ -73,7 +73,15 @@ export default function EventDetailPage() {
         try {
             await createComment(uuid, newComment.author_uuid, newComment.content);
             const updatedComments = await getComments(uuid);
-            setComments(updatedComments);
+            // Sort the comments according to current sort order
+            const sortedComments = [...updatedComments].sort((a, b) => {
+                if (sortOrder === 'newest') {
+                    return new Date(b.date) - new Date(a.date);
+                } else {
+                    return new Date(a.date) - new Date(b.date);
+                }
+            });
+            setComments(sortedComments);
             setNewComment({ author_uuid: '', content: '' });
             setShowCommentForm(false);
         } catch (err) {
