@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { acceptGenericInvitation, getGenericInvitationDetails } from '@/api/api';
 import styles from '@/styles/acceptInvitation.module.css';
 
+import Link from 'next/link';
+
 export default function AcceptInvitationPage() {
     const params = useParams();
     const invitationUuid = params.uuid;
@@ -17,6 +19,7 @@ export default function AcceptInvitationPage() {
     const [error, setError] = useState(null);
     const [errorDetails, setErrorDetails] = useState(null);
     const [eventDetails, setEventDetails] = useState(null);
+    const [success, setSuccess] = useState(null);
 
 
      useEffect(() => {
@@ -61,6 +64,7 @@ export default function AcceptInvitationPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccess(null);
 
         if (!formData.name || !formData.email) {
             setError('Please enter your name and email to join.');
@@ -78,14 +82,19 @@ export default function AcceptInvitationPage() {
             const response = await acceptGenericInvitation(invitationUuid, formData.name, formData.email);
 
             console.log('Invitation accepted, participant created:', response);
-            alert(`Success! You have joined the event.\n\nYour UUID is: \n${response.uuid}\n\nIMPORTANT: Please save this UUID as it can only be accessed once. It will be needed to comment on the event.`);
+            setSuccess({
+                uuid: response.uuid,
+                event: response.event
+            });
 
-            if (response && response.event) {
-                router.push(`/event/${response.event}`);
-            } else {
-                 console.warn("Backend did not return event_uuid on generic invitation acceptance.");
-                 router.push('/');
-            }
+            // get rid of redirection, user must have time to save displayed url
+
+            // if (response && response.event) {
+            //     router.push(`/event/${response.event}`);
+            // } else {
+            //      console.warn("Backend did not return event_uuid on generic invitation acceptance.");
+            //      router.push('/');
+            // }
 
         } catch (err) {
             console.error('Error accepting invitation:', err);
@@ -122,39 +131,55 @@ export default function AcceptInvitationPage() {
                 </div>
             )}
 
-            {error && <div className={styles.error}>{error}</div>} {/* Submission error display */}
+            {error && <div className={styles.error}>{error}</div>}
+            {success && (
+                <div className={styles.success}>
+                    <h2>Success! You have joined the event.</h2>
+                    <p>
+                        Your URL: <br />
+                        <div className={styles.link}>
+                            <Link href={`/event/${success.event}?author_uuid=${success.uuid}`}>
+                                http://localhost:3000/api/event/{success.event}?author_uuid={success.uuid}
+                            </Link>
+                        </div>
+                    </p>
+                    <p className={styles.important}>IMPORTANT: Please save this URL as it can only be accessed once. It will be needed to comment on the event.</p>
+                </div>
+            )}
 
-            <form onSubmit={handleSubmit} className={styles.form}>
-                <div className={styles.formGroup}>
-                    <label htmlFor="name" className={styles.label}>Your Name</label>
-                    <input
-                        id="name"
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        className={styles.input}
-                        required
-                        disabled={loading || loadingDetails}
-                    />
-                </div>
-                <div className={styles.formGroup}>
-                    <label htmlFor="email" className={styles.label}>Your Email</label>
-                    <input
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className={styles.input}
-                        required
-                        disabled={loading || loadingDetails}
-                    />
-                </div>
-                <button type="submit" className={styles.submitButton} disabled={loading || loadingDetails}>
-                    {loading ? 'Joining...' : 'Join Event'}
-                </button>
-            </form>
+            {!success && (
+                <form onSubmit={handleSubmit} className={styles.form}>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="name" className={styles.label}>Your Name</label>
+                        <input
+                            id="name"
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            className={styles.input}
+                            required
+                            disabled={loading || loadingDetails}
+                        />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="email" className={styles.label}>Your Email</label>
+                        <input
+                            id="email"
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            className={styles.input}
+                            required
+                            disabled={loading || loadingDetails}
+                        />
+                    </div>
+                    <button type="submit" className={styles.submitButton} disabled={loading || loadingDetails}>
+                        {loading ? 'Joining...' : 'Join Event'}
+                    </button>
+                </form>
+            )}
         </div>
     );
 }
