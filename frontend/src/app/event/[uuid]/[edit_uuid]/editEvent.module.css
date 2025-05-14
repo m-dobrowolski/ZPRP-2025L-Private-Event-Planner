@@ -256,6 +256,8 @@
     cursor: pointer;
     margin-top: 1rem;
     font-size: 14px;
+    display: block;
+    margin-left: auto;
 }
 
 .deleteCommentButton:hover {

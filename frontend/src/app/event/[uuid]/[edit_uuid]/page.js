@@ -592,7 +592,7 @@ export default function EditEventPage() {
                                     onClick={() => handleDeleteComment(comment.uuid, comment.author || 'Unknown Author')}
                                     disabled={deletingCommentId === comment.uuid || isMainActionLoading || isAddModalLoading}
                                 >
-                                    {deletingCommentId === comment.uuid ? 'Deleting...' : 'Delete Comment'}
+                                    {deletingCommentId === comment.uuid ? 'Deleting...' : 'Delete'}
                                 </button>
                             </li>
                         ))}
