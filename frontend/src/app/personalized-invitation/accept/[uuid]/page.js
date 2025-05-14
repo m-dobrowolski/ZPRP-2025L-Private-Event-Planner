@@ -83,7 +83,7 @@ export default function AcceptPersonalizedInvitationPage() {
             const response = await acceptPersonalizedInvitation(invitationUuid, formData.name, formData.email);
 
             console.log('Personalized invitation accepted, participant created:', response);
-            alert(`Success! You have joined the event as "${response.name || 'Unnamed Participant'}".`);
+            alert(`Success! You have joined the event as "${response.name || 'Unnamed Participant'}".\n\nYour UUID is: \n${response.uuid}\n\nIMPORTANT: Please save this UUID as it can only be accessed once. It will be needed to comment on the event.`);
 
             if (response && response.event) {
                 router.push(`/event/${response.event}`);

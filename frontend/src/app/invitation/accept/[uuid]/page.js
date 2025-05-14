@@ -78,7 +78,7 @@ export default function AcceptInvitationPage() {
             const response = await acceptGenericInvitation(invitationUuid, formData.name, formData.email);
 
             console.log('Invitation accepted, participant created:', response);
-            alert('Success! You have joined the event.');
+            alert(`Success! You have joined the event.\n\nYour UUID is: \n${response.uuid}\n\nIMPORTANT: Please save this UUID as it can only be accessed once. It will be needed to comment on the event.`);
 
             if (response && response.event) {
                 router.push(`/event/${response.event}`);
