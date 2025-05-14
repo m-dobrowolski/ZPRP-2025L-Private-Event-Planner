@@ -133,16 +133,30 @@ export default function EventDetailPage() {
                 </div>
             )}
 
+            <div className={styles.eventTimeLocationDetails}>
+                <div className={styles.eventDetailsLeft}>
+                    <div className={styles.detailItem}>
+                        <strong>Location:</strong> {eventData.location}
+                    </div>
+                    <div className={styles.detailItem}>
+                        <strong>Start Time:</strong> {formatDateTime(eventData.start_datetime)}
+                    </div>
+                    <div className={styles.detailItem}>
+                        <strong>End Time:</strong> {formatDateTime(eventData.end_datetime)}
+                    </div>
+                </div>
+                <div className={styles.eventDetailsRight}>
+                    <a
+                        href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventData.name)}&dates=${new Date(eventData.start_datetime).toISOString().replace(/-|:|\.\d+/g, '')}/${new Date(eventData.end_datetime).toISOString().replace(/-|:|\.\d+/g, '')}&details=${encodeURIComponent(eventData.description || '')}&location=${encodeURIComponent(eventData.location || '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.googleCalendarButton}
+                    >
+                        Add to Google Calendar
+                    </a>
+                </div>
+            </div>
 
-            <div className={styles.detailItem}>
-                <strong>Location:</strong> {eventData.location}
-            </div>
-            <div className={styles.detailItem}>
-                <strong>Start Time:</strong> {formatDateTime(eventData.start_datetime)}
-            </div>
-            <div className={styles.detailItem}>
-                <strong>End Time:</strong> {formatDateTime(eventData.end_datetime)}
-            </div>
             {eventData.organizer_name && (
                 <div className={styles.detailItem}>
                     <strong>Organizer:</strong> {eventData.organizer_name}

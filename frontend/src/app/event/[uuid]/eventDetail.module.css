@@ -248,3 +248,36 @@
     background-color: #000;
     border-color: #dee2e6;
 }
+
+.eventTimeLocationDetails {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.eventDetailsLeft {
+    flex: 1;
+}
+
+.eventDetailsRight {
+    display: flex;
+    align-items: flex-start;
+}
+
+.googleCalendarButton {
+    display: inline-block;
+    background-color: #454545;
+    border: 1px solid #dee2e6;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.googleCalendarButton:hover {
+    background-color: #333;
+    text-decoration: none;
+}
