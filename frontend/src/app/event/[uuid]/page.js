@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { getEventDetails, getComments, createComment } from '@/api/api';
 import styles from './eventDetail.module.css';
 
 export default function EventDetailPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const uuid = params.uuid;
+    const authorUuid = searchParams.get('author_uuid');
 
     const [eventData, setEventData] = useState(null);
     const [participants, setParticipants] = useState([]);
@@ -15,7 +17,7 @@ export default function EventDetailPage() {
     const [error, setError] = useState(null);
     const [popupError, setPopupError] = useState(null);
     const [showCommentForm, setShowCommentForm] = useState(false);
-    const [newComment, setNewComment] = useState({ author_uuid: '', content: '' });
+    const [newComment, setNewComment] = useState({ content: '' });
     const [submittingComment, setSubmittingComment] = useState(false);
     const [sortOrder, setSortOrder] = useState('newest');
 
@@ -71,7 +73,7 @@ export default function EventDetailPage() {
         e.preventDefault();
         setSubmittingComment(true);
         try {
-            await createComment(uuid, newComment.author_uuid, newComment.content);
+            await createComment(uuid, authorUuid, newComment.content);
             const updatedComments = await getComments(uuid);
             // Sort the comments according to current sort order
             const sortedComments = [...updatedComments].sort((a, b) => {
@@ -82,7 +84,7 @@ export default function EventDetailPage() {
                 }
             });
             setComments(sortedComments);
-            setNewComment({ author_uuid: '', content: '' });
+            setNewComment({ content: '' });
             setShowCommentForm(false);
         } catch (err) {
             const errorMessage = err.message || 'Failed to add comment.';
@@ -202,26 +204,17 @@ export default function EventDetailPage() {
 
             <div className={styles.section}>
                 <h2>Comments ({comments.length})</h2>
-                <button
-                    className={styles.addCommentButton}
-                    onClick={() => setShowCommentForm(!showCommentForm)}
-                >
-                    {showCommentForm ? 'Cancel' : 'Add Comment'}
-                </button>
+                {authorUuid && (
+                    <button
+                        className={styles.addCommentButton}
+                        onClick={() => setShowCommentForm(!showCommentForm)}
+                    >
+                        {showCommentForm ? 'Cancel' : 'Add Comment'}
+                    </button>
+                )}
 
-                {showCommentForm && (
+                {showCommentForm && authorUuid && (
                     <form onSubmit={handleCommentSubmit} className={styles.commentForm}>
-                        <div className={styles.formGroup}>
-                            <label htmlFor="author_uuid">Author UUID:</label>
-                            <input
-                                type="text"
-                                id="author_uuid"
-                                value={newComment.author_uuid}
-                                onChange={(e) => setNewComment(prev => ({ ...prev, author_uuid: e.target.value }))}
-                                required
-                                className={styles.input}
-                            />
-                        </div>
                         <div className={styles.formGroup}>
                             <label htmlFor="content">Comment:</label>
                             <textarea

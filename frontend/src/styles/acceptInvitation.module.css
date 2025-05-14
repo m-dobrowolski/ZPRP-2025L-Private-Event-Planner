@@ -85,3 +85,46 @@
     margin-bottom: 20px;
     text-align: center;
 }
+
+.success {
+    background-color: #003c1b;
+    border: 1px solid #68d391;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.success h2 {
+    color: #7cd1a7;
+    margin-bottom: 15px;
+}
+
+.success p {
+    margin: 10px 0;
+    color: #7cd1a7;
+}
+
+.success .important {
+    color: #d34c4c;
+    font-weight: 500;
+    margin: 15px 0;
+    padding: 10px;
+    background-color: #390000;
+    border-radius: 8px;
+}
+
+.link{
+    word-break: break-all;
+    color: #94c6e7;
+    padding-left: 0.5rem;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.link_row{
+    padding-top: 0.75rem;
+}
