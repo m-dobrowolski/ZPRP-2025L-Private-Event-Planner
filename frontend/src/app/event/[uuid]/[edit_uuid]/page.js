@@ -73,6 +73,7 @@ export default function EditEventPage() {
 
     const [comments, setComments] = useState([]);
     const [deletingCommentId, setDeletingCommentId] = useState(null);
+    const [showComments, setShowComments] = useState(false);
 
     const fetchEventData = async () => {
         setLoadingFetch(true);
@@ -575,30 +576,43 @@ export default function EditEventPage() {
 
             {/* --- Comments Section --- */}
             <div className={styles.section}>
-                <h2>Comments ({comments.length})</h2>
-                {comments.length > 0 ? (
-                    <ul className={styles.commentList}>
-                        {comments.map(comment => (
-                            <li key={comment.uuid} className={styles.commentItem}>
-                                <div className={styles.commentHeader}>
-                                    <strong>{comment.author}</strong>
-                                    <span className={styles.commentDate}>
-                                        {formatDateTime(comment.date)}
-                                    </span>
-                                </div>
-                                <p className={styles.commentContent}>{comment.content}</p>
-                                <button
-                                    className={styles.deleteCommentButton}
-                                    onClick={() => handleDeleteComment(comment.uuid, comment.author || 'Unknown Author')}
-                                    disabled={deletingCommentId === comment.uuid || isMainActionLoading || isAddModalLoading}
-                                >
-                                    {deletingCommentId === comment.uuid ? 'Deleting...' : 'Delete'}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No comments yet.</p>
+                <div className={styles.sectionHeader}>
+                    <h2>Comments ({comments.length})</h2>
+                    <button
+                        className={styles.toggleButton}
+                        onClick={() => setShowComments(!showComments)}
+                        aria-label={showComments ? "Hide comments" : "Show comments"}
+                    >
+                        {showComments ? '▲' : '▼'}
+                    </button>
+                </div>
+                {showComments && (
+                    <>
+                        {comments.length > 0 ? (
+                            <ul className={styles.commentList}>
+                                {comments.map(comment => (
+                                    <li key={comment.uuid} className={styles.commentItem}>
+                                        <div className={styles.commentHeader}>
+                                            <strong>{comment.author}</strong>
+                                            <span className={styles.commentDate}>
+                                                {formatDateTime(comment.date)}
+                                            </span>
+                                        </div>
+                                        <p className={styles.commentContent}>{comment.content}</p>
+                                        <button
+                                            className={styles.deleteCommentButton}
+                                            onClick={() => handleDeleteComment(comment.uuid, comment.author || 'Unknown Author')}
+                                            disabled={deletingCommentId === comment.uuid || isMainActionLoading || isAddModalLoading}
+                                        >
+                                            {deletingCommentId === comment.uuid ? 'Deleting...' : 'Delete'}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>No comments yet.</p>
+                        )}
+                    </>
                 )}
             </div>
 

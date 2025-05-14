@@ -220,6 +220,18 @@
     list-style: none;
     padding: 0;
     margin: 0;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .commentItem {
@@ -267,4 +279,28 @@
 .deleteCommentButton:disabled {
     background-color: #6c757d;
     cursor: not-allowed;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sectionHeader h2 {
+    margin: 0;
+}
+
+.toggleButton {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: color 0.2s;
+}
+
+.toggleButton:hover {
+    color: #5a6268;
 }
