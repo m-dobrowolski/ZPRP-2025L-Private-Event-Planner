@@ -147,7 +147,7 @@ export default function AcceptInvitationPage() {
                 </div>
             )}
 
-            {!success && (
+            {!success && eventDetails && (
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
                         <label htmlFor="name" className={styles.label}>Your Name</label>
