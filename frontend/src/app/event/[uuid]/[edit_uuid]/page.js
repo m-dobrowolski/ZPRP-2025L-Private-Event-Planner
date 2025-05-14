@@ -74,6 +74,7 @@ export default function EditEventPage() {
     const [comments, setComments] = useState([]);
     const [deletingCommentId, setDeletingCommentId] = useState(null);
     const [showComments, setShowComments] = useState(false);
+    const [showParticipants, setShowParticipants] = useState(false);
 
     const fetchEventData = async () => {
         setLoadingFetch(true);
@@ -551,26 +552,39 @@ export default function EditEventPage() {
 
             {/* --- Participants Section --- */}
             <div className={styles.section}>
-                <h2>Participants ({participants.length})</h2>
-                {participants.length > 0 ? (
-                    <ul className={styles.participantList}>
-                        {participants.map(participant => (
-                            <li key={participant.id} className={styles.participantItem}>
-                                <span>
-                                    {participant.name} {participant.email ? `(${participant.email})` : ''}
-                                </span>
-                                <button
-                                    className={styles.deleteParticipantButton}
-                                    onClick={() => handleDeleteParticipant(participant.id, participant.name || 'Unnamed Participant')}
-                                    disabled={deletingParticipantId === participant.id || isMainActionLoading || isAddModalLoading}
-                                >
-                                    {deletingParticipantId === participant.id ? 'Deleting...' : 'Delete'}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No participants have joined yet.</p>
+                <div className={styles.sectionHeader}>
+                    <h2>Participants ({participants.length})</h2>
+                    <button
+                        className={styles.toggleButton}
+                        onClick={() => setShowParticipants(!showParticipants)}
+                        aria-label={showParticipants ? "Hide participants" : "Show participants"}
+                    >
+                        {showParticipants ? '▲' : '▼'}
+                    </button>
+                </div>
+                {showParticipants && (
+                    <>
+                        {participants.length > 0 ? (
+                            <ul className={styles.participantList}>
+                                {participants.map(participant => (
+                                    <li key={participant.id} className={styles.participantItem}>
+                                        <span>
+                                            {participant.name} {participant.email ? `(${participant.email})` : ''}
+                                        </span>
+                                        <button
+                                            className={styles.deleteParticipantButton}
+                                            onClick={() => handleDeleteParticipant(participant.id, participant.name || 'Unnamed Participant')}
+                                            disabled={deletingParticipantId === participant.id || isMainActionLoading || isAddModalLoading}
+                                        >
+                                            {deletingParticipantId === participant.id ? 'Deleting...' : 'Delete'}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>No participants have joined yet.</p>
+                        )}
+                    </>
                 )}
             </div>
 
