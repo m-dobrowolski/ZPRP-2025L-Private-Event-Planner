@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { acceptPersonalizedInvitation, getPersonalizedInvitationDetails } from '@/api/api';
 import styles from '@/styles/acceptInvitation.module.css';
 
+import Link from 'next/link';
+
 export default function AcceptPersonalizedInvitationPage() {
     const params = useParams();
     const invitationUuid = params.uuid;
@@ -18,6 +20,7 @@ export default function AcceptPersonalizedInvitationPage() {
     const [errorDetails, setErrorDetails] = useState(null);
     const [invitationDetails, setInvitationDetails] = useState(null);
     const [eventDetails, setEventDetails] = useState(null);
+    const [success, setSuccess] = useState(null);
 
 
      useEffect(() => {
@@ -66,6 +69,7 @@ export default function AcceptPersonalizedInvitationPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccess(null);
 
         if (!invitationDetails) {
              setError("Cannot accept invitation: Details not loaded.");
@@ -83,14 +87,19 @@ export default function AcceptPersonalizedInvitationPage() {
             const response = await acceptPersonalizedInvitation(invitationUuid, formData.name, formData.email);
 
             console.log('Personalized invitation accepted, participant created:', response);
-            alert(`Success! You have joined the event as "${response.name || 'Unnamed Participant'}".`);
+            setSuccess({
+                uuid: response.uuid,
+                event: response.event
+            });
 
-            if (response && response.event) {
-                router.push(`/event/${response.event}`);
-            } else {
-                 console.warn("Backend did not return event_uuid on personalized invitation acceptance.");
-                 router.push('/');
-            }
+            // get rid of redirection, user must have time to save displayed url
+
+            // if (response && response.event) {
+            //     router.push(`/event/${response.event}`);
+            // } else {
+            //      console.warn("Backend did not return event_uuid on personalized invitation acceptance.");
+            //      router.push('/');
+            // }
 
 
         } catch (err) {
@@ -133,7 +142,22 @@ export default function AcceptPersonalizedInvitationPage() {
 
             {error && <div className={styles.error}>{error}</div>}
 
-            {invitationDetails && eventDetails && (
+            {success && (
+                <div className={styles.success}>
+                    <h2>Success! You have joined the event.</h2>
+                    <p>
+                        Your URL: <br />
+                        <div className={styles.link}>
+                            <Link href={`/event/${success.event}?author_uuid=${success.uuid}`}>
+                                http://localhost:3000/api/event/{success.event}?author_uuid={success.uuid}
+                            </Link>
+                        </div>
+                    </p>
+                    <p className={styles.important}>IMPORTANT: Please save this URL as it can only be accessed once. It will be needed to comment on the event.</p>
+                </div>
+            )}
+
+            {!success && invitationDetails && eventDetails && (
                  <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
                          <label className={styles.label}>Your Name</label>

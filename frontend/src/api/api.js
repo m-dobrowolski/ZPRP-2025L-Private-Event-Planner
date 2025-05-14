@@ -149,3 +149,20 @@ export async function acceptPersonalizedInvitation(invitationUuid, name, email) 
 export async function getPersonalizedInvitationDetails(invitationUuid) {
      return fetchData(`personalized-invitation/details/${invitationUuid}/`);
 }
+
+export async function createComment(eventUuid, participantOrEventEditUuid, content) {
+    const body = {
+        event: eventUuid,
+        author_uuid: participantOrEventEditUuid,
+        content: content
+    };
+    return sendData('comments/create/', 'POST', body);
+}
+
+export async function getComments(eventUuid) {
+    return fetchData(`comments/${eventUuid}/`);
+}
+
+export async function deleteComment(commentUuid, participantOrEventEditUuid) {
+    return fetchData(`comments/delete/${commentUuid}/${participantOrEventEditUuid}`, { method: 'DELETE' });
+}

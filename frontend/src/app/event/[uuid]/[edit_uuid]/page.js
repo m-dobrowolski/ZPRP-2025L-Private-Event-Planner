@@ -11,7 +11,9 @@ import {
     deleteGenericInvitation,
     deletePersonalizedInvitation,
     createPersonalizedInvitation,
-    createGenericInvitation
+    createGenericInvitation,
+    getComments,
+    deleteComment
 } from '@/api/api';
 import styles from './editEvent.module.css';
 import modalStyles from './addParticipantModal.module.css'
@@ -67,7 +69,12 @@ export default function EditEventPage() {
     const [errorDeleteParticipant, setErrorDeleteParticipant] = useState(null);
     const [errorDeleteGenericInvitation, setErrorDeleteGenericInvitation] = useState(null);
     const [errorDeletePersonalizedInvitation, setErrorDeletePersonalizedInvitation] = useState(null);
+    const [errorDeleteComment, setErrorDeleteComment] = useState(null);
 
+    const [comments, setComments] = useState([]);
+    const [deletingCommentId, setDeletingCommentId] = useState(null);
+    const [showComments, setShowComments] = useState(false);
+    const [showParticipants, setShowParticipants] = useState(false);
 
     const fetchEventData = async () => {
         setLoadingFetch(true);
@@ -77,10 +84,13 @@ export default function EditEventPage() {
         setErrorDeletePersonalizedInvitation(null);
         setErrorAddPersonalized(null);
         setErrorAddGeneric(null);
-
+        setErrorDeleteComment(null);
 
         try {
-            const data = await getEventAdminDetails(uuid, edit_uuid);
+            const [data, commentsData] = await Promise.all([
+                getEventAdminDetails(uuid, edit_uuid),
+                getComments(uuid)
+            ]);
 
             setFormData({
                 name: data.name || '',
@@ -100,7 +110,7 @@ export default function EditEventPage() {
             setParticipants(data.participants || []);
             setGenericInvitations(data.invitations || []);
             setPersonalizedInvitations(data.personalized_invitations || []);
-
+            setComments(commentsData || []);
 
         } catch (err) {
             setErrorFetch(err.message || 'Failed to fetch event for editing. Check UUIDs.');
@@ -359,6 +369,42 @@ export default function EditEventPage() {
 
     const isAddModalLoading = loadingAddPersonalized || loadingAddGeneric;
 
+    const handleDeleteComment = async (commentUuid, authorName) => {
+        if (!confirm(`Are you sure you want to delete the comment by "${authorName}"?`)) {
+            return;
+        }
+
+        setDeletingCommentId(commentUuid);
+        setErrorDeleteComment(null);
+
+        try {
+            await deleteComment(commentUuid, edit_uuid);
+            // Update comments list immediately
+            setComments(prevComments => prevComments.filter(c => c.uuid !== commentUuid));
+        } catch (error) {
+            console.error(`Error deleting comment ${commentUuid}:`, error);
+            const errorMessage = error.response?.data?.detail || error.message || `Failed to delete comment by "${authorName}".`;
+            setErrorDeleteComment(errorMessage);
+        } finally {
+            setDeletingCommentId(null);
+        }
+    };
+
+    const formatDateTime = (datetimeString) => {
+        if (!datetimeString) return 'N/A';
+        try {
+            const date = new Date(datetimeString);
+            if (isNaN(date.getTime())) {
+                return datetimeString;
+            }
+            const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return date.toLocaleString(undefined, options);
+        } catch (e) {
+            console.error("Error formatting date:", e);
+            return datetimeString;
+        }
+    };
+
     if (loadingFetch) {
         return <div className={styles.container}>Loading event for editing...</div>;
     }
@@ -376,6 +422,7 @@ export default function EditEventPage() {
             {errorDeleteParticipant && <div className={styles.error}>{errorDeleteParticipant}</div>}
             {errorDeleteGenericInvitation && <div className={styles.error}>{errorDeleteGenericInvitation}</div>}
             {errorDeletePersonalizedInvitation && <div className={styles.error}>{errorDeletePersonalizedInvitation}</div>}
+            {errorDeleteComment && <div className={styles.error}>{errorDeleteComment}</div>}
 
             <form id="editEventForm" onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
@@ -505,28 +552,84 @@ export default function EditEventPage() {
 
             {/* --- Participants Section --- */}
             <div className={styles.section}>
-                <h2>Participants ({participants.length})</h2>
-                {participants.length > 0 ? (
-                    <ul className={styles.participantList}>
-                        {participants.map(participant => (
-                            <li key={participant.id} className={styles.participantItem}>
-                                <span>
-                                    {participant.name} {participant.email ? `(${participant.email})` : ''}
-                                </span>
-                                <button
-                                    className={styles.deleteParticipantButton}
-                                    onClick={() => handleDeleteParticipant(participant.id, participant.name || 'Unnamed Participant')}
-                                    disabled={deletingParticipantId === participant.id || isMainActionLoading || isAddModalLoading}
-                                >
-                                    {deletingParticipantId === participant.id ? 'Deleting...' : 'Delete'}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No participants have joined yet.</p>
+                <div className={styles.sectionHeader}>
+                    <h2>Participants ({participants.length})</h2>
+                    <button
+                        className={styles.toggleButton}
+                        onClick={() => setShowParticipants(!showParticipants)}
+                        aria-label={showParticipants ? "Hide participants" : "Show participants"}
+                    >
+                        {showParticipants ? '▲' : '▼'}
+                    </button>
+                </div>
+                {showParticipants && (
+                    <>
+                        {participants.length > 0 ? (
+                            <ul className={styles.participantList}>
+                                {participants.map(participant => (
+                                    <li key={participant.id} className={styles.participantItem}>
+                                        <span>
+                                            {participant.name} {participant.email ? `(${participant.email})` : ''}
+                                        </span>
+                                        <button
+                                            className={styles.deleteParticipantButton}
+                                            onClick={() => handleDeleteParticipant(participant.id, participant.name || 'Unnamed Participant')}
+                                            disabled={deletingParticipantId === participant.id || isMainActionLoading || isAddModalLoading}
+                                        >
+                                            {deletingParticipantId === participant.id ? 'Deleting...' : 'Delete'}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>No participants have joined yet.</p>
+                        )}
+                    </>
                 )}
             </div>
+
+            {/* --- Comments Section --- */}
+            <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                    <h2>Comments ({comments.length})</h2>
+                    <button
+                        className={styles.toggleButton}
+                        onClick={() => setShowComments(!showComments)}
+                        aria-label={showComments ? "Hide comments" : "Show comments"}
+                    >
+                        {showComments ? '▲' : '▼'}
+                    </button>
+                </div>
+                {showComments && (
+                    <>
+                        {comments.length > 0 ? (
+                            <ul className={styles.commentList}>
+                                {comments.map(comment => (
+                                    <li key={comment.uuid} className={styles.commentItem}>
+                                        <div className={styles.commentHeader}>
+                                            <strong>{comment.author}</strong>
+                                            <span className={styles.commentDate}>
+                                                {formatDateTime(comment.date)}
+                                            </span>
+                                        </div>
+                                        <p className={styles.commentContent}>{comment.content}</p>
+                                        <button
+                                            className={styles.deleteCommentButton}
+                                            onClick={() => handleDeleteComment(comment.uuid, comment.author || 'Unknown Author')}
+                                            disabled={deletingCommentId === comment.uuid || isMainActionLoading || isAddModalLoading}
+                                        >
+                                            {deletingCommentId === comment.uuid ? 'Deleting...' : 'Delete'}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>No comments yet.</p>
+                        )}
+                    </>
+                )}
+            </div>
+
 
             {/* --- Invitations Section --- */}
             <div className={styles.section}>
