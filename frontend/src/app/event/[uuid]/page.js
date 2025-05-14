@@ -17,6 +17,7 @@ export default function EventDetailPage() {
     const [showCommentForm, setShowCommentForm] = useState(false);
     const [newComment, setNewComment] = useState({ author_uuid: '', content: '' });
     const [submittingComment, setSubmittingComment] = useState(false);
+    const [sortOrder, setSortOrder] = useState('newest');
 
     useEffect(() => {
         if (!uuid) return;
@@ -31,7 +32,10 @@ export default function EventDetailPage() {
                 ]);
                 setEventData(eventData);
                 setParticipants(eventData.participants || []);
-                setComments(commentsData || []);
+                const sortedComments = [...(commentsData || [])].sort((a, b) => {
+                    return new Date(b.date) - new Date(a.date);
+                });
+                setComments(sortedComments);
             } catch (err) {
                 setError(err.message || 'Failed to fetch event details.');
                 console.error('Error fetching event:', err);
@@ -79,6 +83,18 @@ export default function EventDetailPage() {
         } finally {
             setSubmittingComment(false);
         }
+    };
+
+    const sortComments = (order) => {
+        setSortOrder(order);
+        const sortedComments = [...comments].sort((a, b) => {
+            if (order === 'newest') {
+                return new Date(b.date) - new Date(a.date);
+            } else {
+                return new Date(a.date) - new Date(b.date);
+            }
+        });
+        setComments(sortedComments);
     };
 
     if (loading) {
@@ -204,10 +220,25 @@ export default function EventDetailPage() {
                     </form>
                 )}
 
+                <div className={styles.sortControls}>
+                    <button
+                        className={`${styles.sortButton} ${sortOrder === 'newest' ? styles.active : ''}`}
+                        onClick={() => sortComments('newest')}
+                    >
+                        Newest First
+                    </button>
+                    <button
+                        className={`${styles.sortButton} ${sortOrder === 'oldest' ? styles.active : ''}`}
+                        onClick={() => sortComments('oldest')}
+                    >
+                        Oldest First
+                    </button>
+                </div>
+
                 {comments.length > 0 ? (
                     <ul className={styles.commentList}>
                         {comments.map(comment => (
-                            <li key={comment.id} className={styles.commentItem}>
+                            <li key={comment.uuid} className={styles.commentItem}>
                                 <div className={styles.commentHeader}>
                                     <strong>{comment.author}</strong>
                                     <span className={styles.commentDate}>

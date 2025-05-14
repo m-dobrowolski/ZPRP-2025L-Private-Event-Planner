@@ -216,3 +216,35 @@
         opacity: 1;
     }
 }
+
+.commentControls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sortControls {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.sortButton {
+    background-color: #454545;
+    border: 1px solid #dee2e6;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    color: white;
+}
+
+.sortButton:hover {
+    background-color: #333;
+}
+
+.sortButton.active {
+    background-color: #000;
+    border-color: #dee2e6;
+}
