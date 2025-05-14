@@ -162,3 +162,7 @@ export async function createComment(eventUuid, participantOrEventEditUuid, conte
 export async function getComments(eventUuid) {
     return fetchData(`comments/${eventUuid}/`);
 }
+
+export async function deleteComment(commentUuid, participantOrEventEditUuid) {
+    return fetchData(`comments/delete/${commentUuid}/${participantOrEventEditUuid}`, { method: 'DELETE' });
+}

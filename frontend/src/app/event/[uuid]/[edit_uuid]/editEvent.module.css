@@ -215,3 +215,54 @@
     background-color: #ccc;
     cursor: not-allowed;
 }
+
+.commentList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.commentItem {
+    background-color: #454545;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.commentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.commentDate {
+    font-size: 0.875rem;
+}
+
+.commentContent {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.deleteCommentButton {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+    font-size: 14px;
+}
+
+.deleteCommentButton:hover {
+    background-color: #c82333;
+}
+
+.deleteCommentButton:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
