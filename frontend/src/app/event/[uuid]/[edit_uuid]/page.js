@@ -367,20 +367,20 @@ export default function EditEventPage() {
 
     const isAddModalLoading = loadingAddPersonalized || loadingAddGeneric;
 
-    const handleDeleteComment = async (commentId, authorName) => {
+    const handleDeleteComment = async (commentUuid, authorName) => {
         if (!confirm(`Are you sure you want to delete the comment by "${authorName}"?`)) {
             return;
         }
 
-        setDeletingCommentId(commentId);
+        setDeletingCommentId(commentUuid);
         setErrorDeleteComment(null);
 
         try {
-            await deleteComment(commentId, edit_uuid);
-            setComments(comments.filter(c => c.id !== commentId));
-            alert(`Comment by "${authorName}" deleted successfully.`);
+            await deleteComment(commentUuid, edit_uuid);
+            // Update comments list immediately
+            setComments(prevComments => prevComments.filter(c => c.uuid !== commentUuid));
         } catch (error) {
-            console.error(`Error deleting comment ${commentId}:`, error);
+            console.error(`Error deleting comment ${commentUuid}:`, error);
             const errorMessage = error.response?.data?.detail || error.message || `Failed to delete comment by "${authorName}".`;
             setErrorDeleteComment(errorMessage);
         } finally {
@@ -579,7 +579,7 @@ export default function EditEventPage() {
                 {comments.length > 0 ? (
                     <ul className={styles.commentList}>
                         {comments.map(comment => (
-                            <li key={comment.id} className={styles.commentItem}>
+                            <li key={comment.uuid} className={styles.commentItem}>
                                 <div className={styles.commentHeader}>
                                     <strong>{comment.author}</strong>
                                     <span className={styles.commentDate}>
