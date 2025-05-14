@@ -16,7 +16,20 @@ async function fetchData(url, options = {}) {
         if (response.status === 204) {
             return null;
         }
-        return await response.json();
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            return await response.json();
+        } else if (contentType && contentType.includes("text/calendar")) {
+            return await response.text(); // Handle text/calendar response
+        } else {
+            const text = await response.text();
+            if (text.length === 0) {
+                return null;
+            }
+            console.warn("API response was not JSON:", url, text);
+            return text;
+        }
     } catch (error) {
         console.error("API Fetch Error:", url, error);
         throw error;
@@ -165,4 +178,8 @@ export async function getComments(eventUuid) {
 
 export async function deleteComment(commentUuid, participantOrEventEditUuid) {
     return fetchData(`comments/delete/${commentUuid}/${participantOrEventEditUuid}`, { method: 'DELETE' });
+}
+
+export async function getEventIcs(eventUuid) {
+    return fetchData(`event/ics/${eventUuid}/`, {method: 'GET'});
 }

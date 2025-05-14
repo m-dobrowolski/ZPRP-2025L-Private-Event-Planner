@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { getEventDetails, getComments, createComment } from '@/api/api';
+import { getEventDetails, getComments, createComment,  getEventIcs } from '@/api/api';
 import styles from './eventDetail.module.css';
 
 export default function EventDetailPage() {
@@ -107,6 +107,24 @@ export default function EventDetailPage() {
         setComments(sortedComments);
     };
 
+    const exportEventICS = async () => {
+        try {
+            const icsData = await getEventIcs(uuid);
+            const blob = new Blob([icsData], { type: 'text/calendar' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'event.ics';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            showErrorPopup('Failed to export ICS file.');
+            console.error('Failed to export ICS: ', err);
+        }
+    }
+
     if (loading) {
         return <div className={styles.container}>Loading event...</div>;
     }
@@ -148,14 +166,18 @@ export default function EventDetailPage() {
                     </div>
                 </div>
                 <div className={styles.eventDetailsRight}>
-                    <a
-                        href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventData.name)}&dates=${new Date(eventData.start_datetime).toISOString().replace(/-|:|\.\d+/g, '')}/${new Date(eventData.end_datetime).toISOString().replace(/-|:|\.\d+/g, '')}&details=${encodeURIComponent(eventData.description || '')}&location=${encodeURIComponent(eventData.location || '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.googleCalendarButton}
-                    >
-                        Add to Google Calendar
-                    </a>
+                    <div className={styles.rightDetailsButton}>
+                        <a
+                            href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventData.name)}&dates=${new Date(eventData.start_datetime).toISOString().replace(/-|:|\.\d+/g, '')}/${new Date(eventData.end_datetime).toISOString().replace(/-|:|\.\d+/g, '')}&details=${encodeURIComponent(eventData.description || '')}&location=${encodeURIComponent(eventData.location || '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Add to Google Calendar
+                        </a>
+                    </div>
+                    <div className={styles.rightDetailsButton}>
+                       <button onClick={exportEventICS}>Export as ICS</button>
+                    </div>
                 </div>
             </div>
 
