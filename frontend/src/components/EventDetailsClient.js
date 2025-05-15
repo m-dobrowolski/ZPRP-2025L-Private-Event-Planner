@@ -149,14 +149,14 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
                 <strong>{t('location_label')}:</strong> {eventData.location}
             </div>
             <div className={styles.detailItem}>
-                <strong>{t('start_time_label')}:</strong> {formatDateTime(eventData.start_datetime)}
+                <strong>{t('start_datetime_label')}:</strong> {formatDateTime(eventData.start_datetime)}
             </div>
             <div className={styles.detailItem}>
-                <strong>{t('end_time_label')}:</strong> {formatDateTime(eventData.end_datetime)}
+                <strong>{t('end_datetime_label')}:</strong> {formatDateTime(eventData.end_datetime)}
             </div>
             {eventData.organizer_name && (
                 <div className={styles.detailItem}>
-                    <strong>{t('organizer_label')}:</strong> {eventData.organizer_name}
+                    <strong>{t('organizer_name_label')}:</strong> {eventData.organizer_name}
                 </div>
             )}
             {eventData.organizer_email && (

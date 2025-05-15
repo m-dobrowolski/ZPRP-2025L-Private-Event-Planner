@@ -346,9 +346,9 @@ export default function EditEventClient({ uuid, edit_uuid }) {
         }
     };
 
-    const copyToClipboard = (text, messageKey) => {
+    const copyToClipboard = (text, messageKey, children) => {
         navigator.clipboard.writeText(text).then(() => {
-            alert(t(messageKey));
+            alert(t(messageKey, children));
         }).catch(err => {
             console.error('Failed to copy text: ', err);
             alert(t('copy_failed_alert'));
@@ -733,7 +733,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                                     <small>{t('personalized_link_help_text')}</small>
                                     <button
                                         className={modalStyles.copyLinkButton}
-                                        onClick={() => copyToClipboard(createdPersonalizedLink, 'personalized_link_copied_alert')}
+                                        onClick={() => copyToClipboard(createdPersonalizedLink, 'personalized_link_copied_nameless_alert')}
                                     >
                                         {t('copy_link_button')}
                                     </button>
