@@ -1,12 +1,14 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createEvent } from '@/api/api';
-import styles from './createEvent.module.css';
-import Link from 'next/link';
 
-export default function CreateEventPage() {
-    const router = useRouter();
+import { useState } from 'react';
+import { createEvent } from '@/api/api';
+import styles from '@/app/[locale]/create-event/createEvent.module.css';
+import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
+
+export default function CreateEventForm() {
+    const { t } = useTranslation('translation');
+
     const [successData, setSuccessData] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
@@ -51,29 +53,29 @@ export default function CreateEventPage() {
     if (successData) {
         return (
             <div className={styles.success_container}>
-                <h1 className={styles.title}>Event created successfully!</h1>
-                <p>Here are the links to access and manage the event. Keep managing link private, it cannot be changed.
-                    Links will be sent to your email address shortly.
+                <h1 className={styles.title}>{t('create_event_success_title')}</h1>
+                <p>
+                    {t('create_event_success_message')}
                 </p>
 
                 <div className={styles.link_row}>
                     <div className={styles.link_description}>
-                        Link to access event:
+                        {t('access_link_label')}:
                     </div>
                     <div className={styles.link}>
                         <Link href={`/event/${successData.uuid}`}>
-                            http://localhost:3000/event/{successData.uuid}
+                            {`http://localhost:3000/event/${successData.uuid}`}
                         </Link>
                     </div>
                 </div>
 
                 <div className={styles.link_row}>
                     <div className={styles.link_description}>
-                        Link to manage event:
+                        {t('manage_link_label')}:
                     </div>
                     <div className={styles.link}>
                         <Link href={`/event/${successData.uuid}/${successData.edit_uuid}`}>
-                            http://localhost:3000/event/{successData.uuid}/{successData.edit_uuid}
+                            {`http://localhost:3000/event/${successData.uuid}/${successData.edit_uuid}`}
                         </Link>
                     </div>
                 </div>
@@ -84,10 +86,10 @@ export default function CreateEventPage() {
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>Create New Event</h1>
+            <h1 className={styles.title}>{t('create_page_title')}</h1>
             <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Event Name*</label>
+                    <label className={styles.label}>{t('event_name_label')}*</label>
                     <input
                         type="text"
                         name="name"
@@ -99,7 +101,7 @@ export default function CreateEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Location*</label>
+                    <label className={styles.label}>{t('location_label')}*</label>
                     <input
                         type="text"
                         name="location"
@@ -112,7 +114,7 @@ export default function CreateEventPage() {
 
                 <div className={styles.formRow}>
                     <div className={styles.formGroup}>
-                        <label className={styles.label}>Start Date & Time*</label>
+                        <label className={styles.label}>{t('start_datetime_label')}*</label>
                         <input
                             type="datetime-local"
                             name="start_datetime"
@@ -124,7 +126,7 @@ export default function CreateEventPage() {
                     </div>
 
                     <div className={styles.formGroup}>
-                        <label className={styles.label}>End Date & Time*</label>
+                        <label className={styles.label}>{t('end_datetime_label')}*</label>
                         <input
                             type="datetime-local"
                             name="end_datetime"
@@ -137,7 +139,7 @@ export default function CreateEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Organizer Email*</label>
+                    <label className={styles.label}>{t('organizer_email_label')}*</label>
                     <input
                         type="email"
                         name="organizer_email"
@@ -149,7 +151,7 @@ export default function CreateEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Organizer Name</label>
+                    <label className={styles.label}>{t('organizer_name_label')}</label>
                     <input
                         type="text"
                         name="organizer_name"
@@ -160,7 +162,7 @@ export default function CreateEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Description</label>
+                    <label className={styles.label}>{t('description_label')}</label>
                     <textarea
                         name="description"
                         value={formData.description}
@@ -170,7 +172,7 @@ export default function CreateEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>External Link</label>
+                    <label className={styles.label}>{t('external_link_label')}</label>
                     <input
                         type="url"
                         name="link"
@@ -181,7 +183,7 @@ export default function CreateEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Event Image</label>
+                    <label className={styles.label}>{t('event_image_label')}</label>
                     <input
                         type="file"
                         name="image"
@@ -192,7 +194,7 @@ export default function CreateEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Participants Limit</label>
+                    <label className={styles.label}>{t('participants_limit_label')}</label>
                     <input
                         type="number"
                         name="participants_limit"
@@ -203,9 +205,8 @@ export default function CreateEventPage() {
                     />
                 </div>
 
-
                 <button type="submit" className={styles.submitButton}>
-                    Create Event
+                    {t('create_button_text')}
                 </button>
             </form>
         </div>

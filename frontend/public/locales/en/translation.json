@@ -1,0 +1,55 @@
+{
+  "app_description": "Private Event Planner is an application designed for organizing private events intuitively. It allows users to create and manage events in an easy way. Events can be accessed only by direct link, generated on event creation. This provides a secure way of sharing events with others. In order to create event user must provide basic information about event and his email address. Email address is used to send editing link to user. Application also allows to export events to ICS format and to add them on google calendar.",
+
+  "create_event_success_title": "Event created successfully!",
+  "create_event_success_message": "Here are the links to access and manage the event. Keep managing link private, it cannot be changed. Links will be sent to your email address shortly.",
+  "access_link_label": "Link to access event",
+  "manage_link_label": "Link to manage event",
+
+  "create_page_title": "Create New Event",
+  "event_name_label": "Event Name",
+  "location_label": "Location",
+  "start_datetime_label": "Start Date & Time",
+  "end_datetime_label": "End Date & Time",
+  "organizer_email_label": "Organizer Email",
+  "organizer_name_label": "Organizer Name",
+  "description_label": "Description",
+  "external_link_label": "External Link",
+  "event_image_label": "Event Image",
+  "participants_limit_label": "Participants Limit",
+  "create_button_text": "Create Event",
+
+  "loading_invitation_details": "Loading invitation details...",
+  "error_loading_invitation_prefix": "Error loading invitation",
+  "invalid_invitation_uuid_error": "Invalid invitation UUID.",
+  "invited_to_event": "You've been invited to: <strong>{{eventName}}</strong>",
+  "your_name_label": "Your Name",
+  "your_email_label": "Your Email",
+  "joining_button": "Joining...",
+  "join_event_button": "Join Event",
+  "invalid_invitation_link_error": "Invalid invitation link.",
+
+
+  "accept_generic_invitation_title": "Accept Event Invitation",
+  "load_event_details_unexpected_response_error": "Could not load event details due to an unexpected response.",
+  "load_event_details_failed_error": "Could not load event details for this invitation.",
+  "invalid_expired_invitation_error": "Invalid or expired invitation link.",
+  "name_email_required_error": "Please enter your name and email to join.",
+  "accept_generic_failed_error": "Failed to accept invitation.",
+  "generic_invitation_accepted_alert": "Success! You have joined the event.\n\nYour UUID is: \n{{uuid}}\n\nIMPORTANT: Please save this UUID as it can only be accessed once. It will be needed to comment on the event.",
+  "accept_generic_invitation_page_title": "Accept Invitation",
+
+
+  "accept_personalized_invitation_title": "Accept Personalized Invitation",
+  "personalized_invitation_not_found_error": "Could not find invitation details.",
+  "load_personalized_failed_error": "Could not load invitation details. It might be invalid or already accepted.",
+  "cannot_accept_details_not_loaded_error": "Cannot accept invitation: Details not loaded.",
+  "your_email_required_error": "Please enter your email to join.",
+  "accept_personalized_failed_error": "Failed to accept invitation. It might be invalid or already used.",
+  "personalized_invitation_accepted_alert": "Success! You have joined the event as \"{{name}}\".\n\nYour UUID is: \n{{uuid}}\n\nIMPORTANT: Please save this UUID as it can only be accessed once. It will be needed to comment on the event.",
+   "unnamed_participant": "Unnamed Participant",
+   "invitation_for": "Invitation for: <strong>{{name}}</strong>",
+   "invalid_or_used_personalized_invitation_error": "Invalid or used personalized invitation link.",
+   "accept_personalized_invitation_page_title": "Accept Personalized Invitation"
+
+}

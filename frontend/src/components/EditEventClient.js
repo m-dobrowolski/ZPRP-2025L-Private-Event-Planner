@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     getEventAdminDetails,
@@ -15,14 +15,14 @@ import {
     getComments,
     deleteComment
 } from '@/api/api';
-import styles from './editEvent.module.css';
-import modalStyles from './addParticipantModal.module.css'
+import styles from '@/app/[locale]/event/[uuid]/[edit_uuid]/editEvent.module.css';
+import modalStyles from '@/app/[locale]/event/[uuid]/[edit_uuid]/addParticipantModal.module.css';
+import { useTranslation } from 'react-i18next';
 
-export default function EditEventPage() {
+
+export default function EditEventClient({ uuid, edit_uuid }) {
     const router = useRouter();
-    const params = useParams();
-    const uuid = params.uuid;
-    const edit_uuid = params.edit_uuid;
+    const { t } = useTranslation('translation');
 
     const [formData, setFormData] = useState({
         name: '',
@@ -40,35 +40,31 @@ export default function EditEventPage() {
 
     const [imagePreview, setImagePreview] = useState(null);
 
-    // Participant states
     const [participants, setParticipants] = useState([]);
     const [genericInvitations, setGenericInvitations] = useState([]);
     const [personalizedInvitations, setPersonalizedInvitations] = useState([]);
 
-    // Add participant modal
     const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
     const [addPersonalizedFormData, setAddPersonalizedFormData] = useState({ name: '' });
     const [createdPersonalizedLink, setCreatedPersonalizedLink] = useState(null);
-    const [loadingAddPersonalized, setLoadingAddPersonalized] = useState(false);
-    const [loadingAddGeneric, setLoadingAddGeneric] = useState(false);
-    const [errorAddPersonalized, setErrorAddPersonalized] = useState(null);
-    const [errorAddGeneric, setErrorAddGeneric] = useState(null);
 
-    // Loading states
     const [loadingFetch, setLoadingFetch] = useState(true);
     const [loadingSave, setLoadingSave] = useState(false);
     const [loadingDeleteEvent, setLoadingDeleteEvent] = useState(false);
     const [deletingParticipantId, setDeletingParticipantId] = useState(null);
     const [deletingGenericInvitationUuid, setDeletingGenericInvitationUuid] = useState(null);
     const [deletingPersonalizedInvitationUuid, setDeletingPersonalizedInvitationUuid] = useState(null);
+    const [loadingAddPersonalized, setLoadingAddPersonalized] = useState(false);
+    const [loadingAddGeneric, setLoadingAddGeneric] = useState(false);
 
-    // Error states
     const [errorFetch, setErrorFetch] = useState(null);
     const [errorSave, setErrorSave] = useState(null);
     const [errorDeleteEvent, setErrorDeleteEvent] = useState(null);
     const [errorDeleteParticipant, setErrorDeleteParticipant] = useState(null);
     const [errorDeleteGenericInvitation, setErrorDeleteGenericInvitation] = useState(null);
     const [errorDeletePersonalizedInvitation, setErrorDeletePersonalizedInvitation] = useState(null);
+    const [errorAddPersonalized, setErrorAddPersonalized] = useState(null);
+    const [errorAddGeneric, setErrorAddGeneric] = useState(null);
     const [errorDeleteComment, setErrorDeleteComment] = useState(null);
 
     const [comments, setComments] = useState([]);
@@ -109,10 +105,12 @@ export default function EditEventPage() {
             setParticipants(data.participants || []);
             setGenericInvitations(data.invitations || []);
             setPersonalizedInvitations(data.personalized_invitations || []);
-            setComments(commentsData || []);
+            // Sort comments by date (newest first initially)
+            const sortedComments = [...(commentsData || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+            setComments(sortedComments);
 
         } catch (err) {
-            setErrorFetch(err.message || 'Failed to fetch event for editing. Check UUIDs.');
+            setErrorFetch(err.message || t('fetch_edit_event_failed_error'));
             console.error('Error fetching event for edit:', err);
         } finally {
             setLoadingFetch(false);
@@ -122,12 +120,12 @@ export default function EditEventPage() {
     useEffect(() => {
         if (!uuid || !edit_uuid) {
             setLoadingFetch(false);
-            setErrorFetch("Event identifier or edit key is missing.");
+            setErrorFetch(t('edit_keys_missing_error'));
             return;
         }
         fetchEventData();
 
-    }, [uuid, edit_uuid]);
+    }, [uuid, edit_uuid, t]);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
@@ -162,7 +160,7 @@ export default function EditEventPage() {
             const formDataToSend = new FormData();
             for (const key in formData) {
                 if (key === 'current_image_url') {
-                     continue;
+                    continue;
                 }
 
                 const value = formData[key];
@@ -177,18 +175,19 @@ export default function EditEventPage() {
             }
 
             await updateEvent(uuid, edit_uuid, formDataToSend);
+
             router.push(`/event/${uuid}`);
 
         } catch (error) {
             console.error('Error updating event:', error);
-            setErrorSave(error.message || 'Failed to update event.');
+            setErrorSave(error.message || t('update_event_failed_error'));
         } finally {
             setLoadingSave(false);
         }
     };
 
     const handleDeleteEvent = async () => {
-        if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+        if (!confirm(t('confirm_delete_event'))) {
             return;
         }
 
@@ -201,14 +200,14 @@ export default function EditEventPage() {
 
         } catch (error) {
             console.error('Error deleting event:', error);
-            setErrorDeleteEvent(error.message || 'Failed to delete event.');
+            setErrorDeleteEvent(error.message || t('delete_event_failed_error'));
         } finally {
             setLoadingDeleteEvent(false);
         }
     };
 
     const handleDeleteParticipant = async (participantId, participantName) => {
-         if (!confirm(`Are you sure you want to delete participant "${participantName}"?`)) {
+         if (!confirm(t('confirm_delete_participant', { name: participantName || t('unnamed_participant') }))) {
              return;
          }
 
@@ -218,11 +217,11 @@ export default function EditEventPage() {
          try {
              await deleteParticipantAsAdmin(participantId, edit_uuid);
              setParticipants(participants.filter(p => p.id !== participantId));
-             alert(`Participant "${participantName}" deleted successfully.`);
+             alert(t('participant_deleted_success', { name: participantName || t('unnamed_participant') }));
 
          } catch (error) {
              console.error(`Error deleting participant ${participantId}:`, error);
-             const errorMessage = error.response?.data?.detail || error.message || `Failed to delete participant "${participantName}".`;
+             const errorMessage = error.response?.data?.detail || error.message || t('delete_participant_failed_error', { name: participantName || t('unnamed_participant') });
              setErrorDeleteParticipant(errorMessage);
          } finally {
              setDeletingParticipantId(null);
@@ -230,7 +229,7 @@ export default function EditEventPage() {
     };
 
     const handleDeleteGenericInvitation = async (invitationUuid) => {
-        if (!confirm('Are you sure you want to delete this generic invitation link? It will no longer be usable.')) {
+        if (!confirm(t('confirm_delete_generic_invitation'))) {
             return;
         }
         setDeletingGenericInvitationUuid(invitationUuid);
@@ -238,10 +237,10 @@ export default function EditEventPage() {
         try {
             await deleteGenericInvitation(invitationUuid, edit_uuid);
             setGenericInvitations(genericInvitations.filter(inv => inv.uuid !== invitationUuid));
-            alert('Generic invitation deleted successfully.');
+            alert(t('generic_invitation_deleted_success'));
         } catch (error) {
              console.error(`Error deleting generic invitation ${invitationUuid}:`, error);
-             const errorMessage = error.response?.data?.detail || error.message || 'Failed to delete generic invitation.';
+             const errorMessage = error.response?.data?.detail || error.message || t('delete_generic_invitation_failed_error');
              setErrorDeleteGenericInvitation(errorMessage);
         } finally {
              setDeletingGenericInvitationUuid(null);
@@ -249,35 +248,34 @@ export default function EditEventPage() {
     };
 
     const handleDeletePersonalizedInvitation = async (invitationUuid, participantName) => {
-         if (!confirm(`Are you sure you want to delete the invitation for "${participantName}"?`)) {
-             return;
-         }
-         setDeletingPersonalizedInvitationUuid(invitationUuid);
-         setErrorDeletePersonalizedInvitation(null);
-         try {
-             await deletePersonalizedInvitation(invitationUuid, edit_uuid);
-              // Update list locally
-             setPersonalizedInvitations(personalizedInvitations.filter(inv => inv.uuid !== invitationUuid));
-             alert(`Invitation for "${participantName}" deleted successfully.`);
-         } catch (error) {
-              console.error(`Error deleting personalized invitation ${invitationUuid}:`, error);
-              const errorMessage = error.response?.data?.detail || error.message || `Failed to delete invitation for "${participantName}".`;
-              setErrorDeletePersonalizedInvitation(errorMessage);
-         } finally {
-              setDeletingPersonalizedInvitationUuid(null);
-         }
+        if (!confirm(t('confirm_delete_personalized_invitation', { name: participantName || t('unnamed_invitation') }))) {
+            return;
+        }
+        setDeletingPersonalizedInvitationUuid(invitationUuid);
+        setErrorDeletePersonalizedInvitation(null);
+        try {
+            await deletePersonalizedInvitation(invitationUuid, edit_uuid);
+            setPersonalizedInvitations(personalizedInvitations.filter(inv => inv.uuid !== invitationUuid));
+            alert(t('personalized_invitation_deleted_success', { name: participantName || t('unnamed_invitation') }));
+        } catch (error) {
+            console.error(`Error deleting personalized invitation ${invitationUuid}:`, error);
+            const errorMessage = error.response?.data?.detail || error.message || t('delete_personalized_invitation_failed_error', { name: participantName || t('unnamed_invitation') });
+            setErrorDeletePersonalizedInvitation(errorMessage);
+        } finally {
+            setDeletingPersonalizedInvitationUuid(null);
+        }
     };
 
     const openAddParticipantModal = () => {
-         setShowAddParticipantModal(true);
-         setAddPersonalizedFormData({ name: '' });
-         setCreatedPersonalizedLink(null);
-         setErrorAddPersonalized(null);
-         setErrorAddGeneric(null);
+        setShowAddParticipantModal(true);
+        setAddPersonalizedFormData({ name: '' });
+        setCreatedPersonalizedLink(null);
+        setErrorAddPersonalized(null);
+        setErrorAddGeneric(null);
     };
 
     const closeAddParticipantModal = () => {
-         setShowAddParticipantModal(false);
+        setShowAddParticipantModal(false);
     };
 
     const handleAddPersonalizedChange = (e) => {
@@ -290,8 +288,8 @@ export default function EditEventPage() {
         setLoadingAddPersonalized(true);
         setErrorAddPersonalized(null);
 
-        if (!addPersonalizedFormData.name) {
-            setErrorAddPersonalized('Please enter a name for the personalized invitation.');
+        if (!addPersonalizedFormData.name.trim()) {
+            setErrorAddPersonalized(t('personalized_name_required_error'));
             setLoadingAddPersonalized(false);
             return;
         }
@@ -300,26 +298,24 @@ export default function EditEventPage() {
             const response = await createPersonalizedInvitation(
                 uuid,
                 edit_uuid,
-                addPersonalizedFormData.name,
+                addPersonalizedFormData.name.trim(),
             );
             console.log('Personalized invitation created:', response);
 
             if (response && response.uuid) {
-                 const invitationLink = `${window.location.origin}/personalized-invitation/accept/${response.uuid}`;
-                 setCreatedPersonalizedLink(invitationLink);
-                 setPersonalizedInvitations(prev => [...prev, response]);
-                 setAddPersonalizedFormData({ name: '' });
+                const invitationLink = `${window.location.origin}/personalized-invitation/accept/${response.uuid}`;
+                setCreatedPersonalizedLink(invitationLink);
+
+                fetchEventData();
 
             } else {
                 console.error('API response missing invitation UUID:', response);
-                setErrorAddPersonalized('Failed to create personalized invitation. Invalid response from server.');
+                setErrorAddPersonalized(t('create_personalized_invalid_response_error'));
             }
-
-            await fetchEventData();
 
         } catch (error) {
             console.error('Error creating personalized invitation:', error);
-             const errorMessage = error.response?.data?.detail || error.message || 'Failed to create personalized invitation.';
+            const errorMessage = error.response?.data?.detail || error.message || t('create_personalized_failed_error');
             setErrorAddPersonalized(errorMessage);
         } finally {
             setLoadingAddPersonalized(false);
@@ -327,37 +323,36 @@ export default function EditEventPage() {
     };
 
     const handleCreateGenericInvitation = async () => {
-         if (genericInvitations.length > 0) {
-              setErrorAddGeneric("A generic invitation link already exists for this event.");
-              return;
-         }
+        if (genericInvitations.length > 0) {
+            setErrorAddGeneric(t('generic_invitation_exists_error'));
+            return;
+        }
 
-         setLoadingAddGeneric(true);
-         setErrorAddGeneric(null);
-         try {
-             const response = await createGenericInvitation(uuid, edit_uuid);
-             console.log('Generic invitation created:', response);
-             alert('Generic invitation link created!');
+        setLoadingAddGeneric(true);
+        setErrorAddGeneric(null);
+        try {
+            const response = await createGenericInvitation(uuid, edit_uuid);
+            console.log('Generic invitation created:', response);
+            alert(t('generic_invitation_created_alert'));
 
-            await fetchEventData();
+            fetchEventData();
 
-
-         } catch (error) {
-             console.error('Error creating generic invitation:', error);
-             const errorMessage = error.response?.data?.detail || error.message || 'Failed to create generic invitation link.';
-             setErrorAddGeneric(errorMessage);
-         } finally {
-             setLoadingAddGeneric(false);
-         }
+        } catch (error) {
+            console.error('Error creating generic invitation:', error);
+            const errorMessage = error.response?.data?.detail || error.message || t('create_generic_failed_error');
+            setErrorAddGeneric(errorMessage);
+        } finally {
+            setLoadingAddGeneric(false);
+        }
     };
 
-    const copyToClipboard = (text, message) => {
-         navigator.clipboard.writeText(text).then(() => {
-             alert(message || 'Link copied to clipboard!');
-         }).catch(err => {
-             console.error('Failed to copy text: ', err);
-             alert('Failed to copy link.');
-         });
+    const copyToClipboard = (text, messageKey) => {
+        navigator.clipboard.writeText(text).then(() => {
+            alert(t(messageKey));
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            alert(t('copy_failed_alert'));
+        });
     };
 
     const currentGenericLink = genericInvitations.length > 0 ?
@@ -369,7 +364,7 @@ export default function EditEventPage() {
     const isAddModalLoading = loadingAddPersonalized || loadingAddGeneric;
 
     const handleDeleteComment = async (commentUuid, authorName) => {
-        if (!confirm(`Are you sure you want to delete the comment by "${authorName}"?`)) {
+        if (!confirm(t('confirm_delete_comment', { author: authorName || t('unknown_author') }))) {
             return;
         }
 
@@ -378,11 +373,12 @@ export default function EditEventPage() {
 
         try {
             await deleteComment(commentUuid, edit_uuid);
-            // Update comments list immediately
             setComments(prevComments => prevComments.filter(c => c.uuid !== commentUuid));
+
+
         } catch (error) {
             console.error(`Error deleting comment ${commentUuid}:`, error);
-            const errorMessage = error.response?.data?.detail || error.message || `Failed to delete comment by "${authorName}".`;
+            const errorMessage = error.response?.data?.detail || error.message || t('delete_comment_failed_error', { author: authorName || t('unknown_author') });
             setErrorDeleteComment(errorMessage);
         } finally {
             setDeletingCommentId(null);
@@ -390,32 +386,34 @@ export default function EditEventPage() {
     };
 
     const formatDateTime = (datetimeString) => {
-        if (!datetimeString) return 'N/A';
+        if (!datetimeString) return t('not_available_abbr');
         try {
             const date = new Date(datetimeString);
             if (isNaN(date.getTime())) {
                 return datetimeString;
             }
-            const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-            return date.toLocaleString(undefined, options);
+
+        return date.toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
         } catch (e) {
             console.error("Error formatting date:", e);
             return datetimeString;
         }
     };
 
+
     if (loadingFetch) {
-        return <div className={styles.container}>Loading event for editing...</div>;
+        return <div className={styles.container}>{t('loading_edit_event')}</div>;
     }
 
     if (errorFetch) {
-        return <div className={`${styles.container} ${styles.error}`}>Error loading event: {errorFetch}</div>;
+        return <div className={`${styles.container} ${styles.error}`}>{t('error_loading_event_prefix')}: {errorFetch}</div>;
     }
 
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>Edit Event: {formData.name || 'Event'}</h1>
+            <h1 className={styles.title}>{t('edit_event_title', { eventName: formData.name || t('event_fallback_name') })}</h1>
             {errorSave && <div className={styles.error}>{errorSave}</div>}
             {errorDeleteEvent && <div className={styles.error}>{errorDeleteEvent}</div>}
             {errorDeleteParticipant && <div className={styles.error}>{errorDeleteParticipant}</div>}
@@ -423,9 +421,10 @@ export default function EditEventPage() {
             {errorDeletePersonalizedInvitation && <div className={styles.error}>{errorDeletePersonalizedInvitation}</div>}
             {errorDeleteComment && <div className={styles.error}>{errorDeleteComment}</div>}
 
-            <form id="editEventForm" onSubmit={handleSubmit} className={styles.form}>
+
+            <form id="editEventForm" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className={styles.form}>
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Event Name*</label>
+                    <label className={styles.label}>{t('event_name_label')}*</label>
                     <input
                         type="text"
                         name="name"
@@ -437,7 +436,7 @@ export default function EditEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Location*</label>
+                    <label className={styles.label}>{t('location_label')}*</label>
                     <input
                         type="text"
                         name="location"
@@ -450,7 +449,7 @@ export default function EditEventPage() {
 
                 <div className={styles.formRow}>
                     <div className={styles.formGroup}>
-                        <label className={styles.label}>Start Date & Time*</label>
+                        <label className={styles.label}>{t('start_datetime_label')}*</label>
                         <input
                             type="datetime-local"
                             name="start_datetime"
@@ -462,7 +461,7 @@ export default function EditEventPage() {
                     </div>
 
                     <div className={styles.formGroup}>
-                        <label className={styles.label}>End Date & Time*</label>
+                        <label className={styles.label}>{t('end_datetime_label')}*</label>
                         <input
                             type="datetime-local"
                             name="end_datetime"
@@ -475,7 +474,7 @@ export default function EditEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Organizer Email*</label>
+                    <label className={styles.label}>{t('organizer_email_label')}*</label>
                     <input
                         type="email"
                         name="organizer_email"
@@ -486,8 +485,8 @@ export default function EditEventPage() {
                     />
                 </div>
 
-                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Organizer Name</label>
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>{t('organizer_name_label')}</label>
                     <input
                         type="text"
                         name="organizer_name"
@@ -499,7 +498,7 @@ export default function EditEventPage() {
 
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Description</label>
+                    <label className={styles.label}>{t('description_label')}</label>
                     <textarea
                         name="description"
                         value={formData.description}
@@ -509,7 +508,7 @@ export default function EditEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>External Link</label>
+                    <label className={styles.label}>{t('external_link_label')}</label>
                     <input
                         type="url"
                         name="link"
@@ -520,10 +519,10 @@ export default function EditEventPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Event Image</label>
+                    <label className={styles.label}>{t('event_image_label')}</label>
                     {(imagePreview || formData.current_image_url) && (
                         <div className={styles.imagePreviewContainer}>
-                            <img src={imagePreview || formData.current_image_url} alt="Image Preview" className={styles.imagePreview} />
+                            <img src={imagePreview || formData.current_image_url} alt={t('image_preview_alt')} className={styles.imagePreview} />
                         </div>
                     )}
                     <input
@@ -533,11 +532,11 @@ export default function EditEventPage() {
                         className={styles.fileInput}
                         accept="image/*"
                     />
-                        <small className={styles.helpText}>Select a new image to replace the current one.</small>
+                        <small className={styles.helpText}>{t('image_upload_help')}</small>
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Participants Limit</label>
+                    <label className={styles.label}>{t('participants_limit_label')}</label>
                     <input
                         type="number"
                         name="participants_limit"
@@ -551,37 +550,38 @@ export default function EditEventPage() {
 
             {/* --- Participants Section --- */}
             <div className={styles.section}>
-                <h2>Participants ({participants.length})</h2>
+                <h2>{t('participants_heading', { count: participants.length })}</h2>
                 {participants.length > 0 ? (
                     <ul className={styles.participantList}>
                         {participants.map(participant => (
+
                             <li key={participant.id} className={styles.participantItem}>
                                 <span>
                                     {participant.name} {participant.email ? `(${participant.email})` : ''}
                                 </span>
                                 <button
                                     className={styles.deleteParticipantButton}
-                                    onClick={() => handleDeleteParticipant(participant.id, participant.name || 'Unnamed Participant')}
+                                    onClick={() => handleDeleteParticipant(participant.id, participant.name)}
                                     disabled={deletingParticipantId === participant.id || isMainActionLoading || isAddModalLoading}
                                 >
-                                    {deletingParticipantId === participant.id ? 'Deleting...' : 'Delete'}
+                                    {deletingParticipantId === participant.id ? t('deleting_button') : t('delete_button')}
                                 </button>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p>No participants have joined yet.</p>
+                    <p>{t('no_participants_yet')}</p>
                 )}
             </div>
 
             {/* --- Comments Section --- */}
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
-                    <h2>Comments ({comments.length})</h2>
+                    <h2>{t('comments_heading', { count: comments.length })}</h2>
                     <button
                         className={styles.toggleButton}
                         onClick={() => setShowComments(!showComments)}
-                        aria-label={showComments ? "Hide comments" : "Show comments"}
+                        aria-label={showComments ? t('hide_comments_label') : t('show_comments_label')}
                     >
                         {showComments ? '▲' : '▼'}
                     </button>
@@ -593,7 +593,7 @@ export default function EditEventPage() {
                                 {comments.map(comment => (
                                     <li key={comment.uuid} className={styles.commentItem}>
                                         <div className={styles.commentHeader}>
-                                            <strong>{comment.author}</strong>
+                                            <strong>{comment.author || t('unknown_author')}</strong>
                                             <span className={styles.commentDate}>
                                                 {formatDateTime(comment.date)}
                                             </span>
@@ -601,16 +601,16 @@ export default function EditEventPage() {
                                         <p className={styles.commentContent}>{comment.content}</p>
                                         <button
                                             className={styles.deleteCommentButton}
-                                            onClick={() => handleDeleteComment(comment.uuid, comment.author || 'Unknown Author')}
+                                            onClick={() => handleDeleteComment(comment.uuid, comment.author)}
                                             disabled={deletingCommentId === comment.uuid || isMainActionLoading || isAddModalLoading}
                                         >
-                                            {deletingCommentId === comment.uuid ? 'Deleting...' : 'Delete'}
+                                            {deletingCommentId === comment.uuid ? t('deleting_button') : t('delete_button')}
                                         </button>
                                     </li>
                                 ))}
                             </ul>
                         ) : (
-                            <p>No comments yet.</p>
+                            <p>{t('no_comments_yet')}</p>
                         )}
                     </>
                 )}
@@ -621,119 +621,121 @@ export default function EditEventPage() {
             <div className={styles.section}>
 
                 {/* Generic Invitations */}
-                <h3>Universal Invitation Link</h3>
+                <h3>{t('universal_invitation_link_heading')}</h3>
                 {genericInvitations.length > 0 ? (
                     <ul className={styles.invitationList}>
                         {genericInvitations.map(invitation => (
                             <li key={invitation.uuid} className={styles.invitationItem}>
                                 <span>
-                                    Link: <Link href={`/invitation/accept/${invitation.uuid}`} target="_blank" rel="noopener noreferrer">
+                                    {t('link_label')}: <Link href={`/invitation/accept/${invitation.uuid}`} target="_blank" rel="noopener noreferrer">
                                         {`${window.location.origin}/invitation/accept/${invitation.uuid}`}
                                     </Link>
                                 </span>
                                 <button
                                     className={styles.copyLinkButton}
-                                    onClick={() => copyToClipboard(`${window.location.origin}/invitation/accept/${invitation.uuid}`, 'Generic link copied!')}
+
+                                    onClick={() => copyToClipboard(`${window.location.origin}/invitation/accept/${invitation.uuid}`, 'generic_link_copied_alert')}
                                 >
-                                    Copy Link
+                                    {t('copy_link_button')}
                                 </button>
                                 <button
                                     className={styles.deleteInvitationButton}
                                     onClick={() => handleDeleteGenericInvitation(invitation.uuid)}
                                     disabled={deletingGenericInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
                                 >
-                                    {deletingGenericInvitationUuid === invitation.uuid ? 'Deleting...' : 'Delete Link'}
+                                    {deletingGenericInvitationUuid === invitation.uuid ? t('deleting_button') : t('delete_link_button')}
                                 </button>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p>No universal invitation link has been created yet.</p>
+                    <p>{t('no_universal_invitation_link_yet')}</p>
                 )}
 
                 {/* Personalized Invitations */}
-                <h3>Personalized Invitations ({personalizedInvitations.length})</h3>
+                <h3>{t('personalized_invitations_heading', { count: personalizedInvitations.length })}</h3>
                 {personalizedInvitations.length > 0 ? (
                     <ul className={styles.invitationList}>
                         {personalizedInvitations.map(invitation => (
                             <li key={invitation.uuid} className={styles.invitationItem}>
-                                 <span>
-                                     <strong>{invitation.name}</strong>
-                                 </span>
-                                 <button
-                                     className={styles.copyLinkButton}
-                                     onClick={() => copyToClipboard(`${window.location.origin}/personalized-invitation/accept/${invitation.uuid}`, `Link for ${invitation.name} copied!`)}
-                                     disabled={deletingPersonalizedInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
-                                 >
-                                     Copy Link
-                                 </button>
-                                 <button
-                                    className={styles.deleteInvitationButton}
-                                    onClick={() => handleDeletePersonalizedInvitation(invitation.uuid, invitation.name || invitation.email || 'Unnamed Invitation')}
+                                <span>
+                                    <strong>{invitation.name}</strong>
+                                </span>
+                                <button
+                                    className={styles.copyLinkButton}
+
+                                    onClick={() => copyToClipboard(`${window.location.origin}/personalized-invitation/accept/${invitation.uuid}`, 'personalized_link_copied_alert', { name: invitation.name })}
                                     disabled={deletingPersonalizedInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
-                                 >
-                                     {deletingPersonalizedInvitationUuid === invitation.uuid ? 'Deleting...' : 'Delete'}
-                                 </button>
+                                >
+                                    {t('copy_link_button')}
+                                </button>
+                                <button
+                                    className={styles.deleteInvitationButton}
+                                    onClick={() => handleDeletePersonalizedInvitation(invitation.uuid, invitation.name)}
+                                    disabled={deletingPersonalizedInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
+                                >
+                                    {deletingPersonalizedInvitationUuid === invitation.uuid ? t('deleting_button') : t('delete_button')}
+                                </button>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p>No personalized invitations have been sent yet.</p>
+                    <p>{t('no_personalized_invitations_yet')}</p>
                 )}
                 <button
                     onClick={openAddParticipantModal}
                     className={styles.submitButton}
                     disabled={isMainActionLoading || isAddModalLoading}
                 >
-                    Add New Participant / Invitation
+                    {t('add_new_participant_button')}
                 </button>
 
                 <button
                     type="submit"
                     form={"editEventForm"}
                     className={styles.submitButton}
-                    // onClick={handleSubmit}
-                    disabled={loadingSave || loadingDeleteEvent}
+                    disabled={loadingSave || loadingDeleteEvent || isMainActionLoading || isAddModalLoading}
                 >
-                    {loadingSave ? 'Saving...' : 'Save Changes'}
+                    {loadingSave ? t('saving_button') : t('save_changes_button')}
                 </button>
 
                 <button
                     className={styles.deleteButton}
                     onClick={handleDeleteEvent}
-                    disabled={loadingSave || loadingDeleteEvent}
+                    disabled={loadingSave || loadingDeleteEvent || isMainActionLoading || isAddModalLoading}
                 >
-                    {loadingDeleteEvent ? 'Deleting...' : 'Delete Event'}
+                    {loadingDeleteEvent ? t('deleting_button') : t('delete_event_button')}
                 </button>
             </div>
 
             {/* --- Add Participant Modal --- */}
             {showAddParticipantModal && (
-                <div className={modalStyles.modalOverlay} onClick={closeAddParticipantModal}>
-                    <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}> {/* Prevent clicks inside closing the modal */}
-                        <button className={modalStyles.closeButton} onClick={closeAddParticipantModal}>×</button>
-                        <h2>Add Participant or Invitation</h2>
 
-                        {isAddModalLoading && <div className={modalStyles.loading}>Processing...</div>}
+                <div className={modalStyles.modalOverlay} onClick={closeAddParticipantModal}>
+                    <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <button className={modalStyles.closeButton} onClick={closeAddParticipantModal}>×</button>
+                        <h2>{t('add_participant_modal_title')}</h2>
+
+                        {isAddModalLoading && <div className={modalStyles.loading}>{t('processing_message')}</div>}
                         {errorAddPersonalized && <div className={modalStyles.error}>{errorAddPersonalized}</div>}
                         {errorAddGeneric && <div className={modalStyles.error}>{errorAddGeneric}</div>}
 
                         <div className={modalStyles.section}>
-                            <h3>Send Personalized Invitation</h3>
+                            <h3>{t('send_personalized_invitation_heading')}</h3>
                             {createdPersonalizedLink ? (
-                               <div className={modalStyles.genericLinkBox}>
-                                    <strong>Personalized Invitation Link:</strong>
+                                <div className={modalStyles.genericLinkBox}>
+                                    <strong>{t('personalized_invitation_link_label')}:</strong>
                                     <p>
                                         <Link href={createdPersonalizedLink} target="_blank" rel="noopener noreferrer">
                                             {createdPersonalizedLink}
                                         </Link>
                                     </p>
-                                    <small>Share this link directly with the person.</small>
+                                    <small>{t('personalized_link_help_text')}</small>
                                     <button
                                         className={modalStyles.copyLinkButton}
-                                        onClick={() => copyToClipboard(createdPersonalizedLink, 'Personalized link copied!')}
+                                        onClick={() => copyToClipboard(createdPersonalizedLink, 'personalized_link_copied_alert')}
                                     >
-                                        Copy Link
+                                        {t('copy_link_button')}
                                     </button>
                                     <button
                                         className={modalStyles.createLinkButton}
@@ -744,51 +746,52 @@ export default function EditEventPage() {
                                         }}
                                         disabled={isAddModalLoading}
                                     >
-                                        Send Another Invitation
+                                        {t('send_another_invitation_button')}
                                     </button>
                                </div>
-                           ) : (
-                               <>
-                                <p>Create an invitation link for a specific person by name.</p>
-                                <form onSubmit={handleAddPersonalizedSubmit} className={modalStyles.form}>
-                                    <div className={modalStyles.formGroup}>
-                                        <label className={modalStyles.label}>Name</label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={addPersonalizedFormData.name}
-                                            onChange={handleAddPersonalizedChange}
-                                            className={modalStyles.input}
-                                            required
-                                            disabled={isAddModalLoading}
-                                        />
-                                    </div>
-                                    <button type="submit" className={modalStyles.submitButton} disabled={isAddModalLoading || !addPersonalizedFormData.name.trim()}> {/* Disable if name is empty */}
-                                        {loadingAddPersonalized ? 'Creating...' : 'Create Personalized Link'}
-                                    </button>
-                                </form>
-                               </>
-                           )}
+                            ) : (
+                                <>
+                                    <p>{t('create_personalized_help_text')}</p>
+                                    <form onSubmit={handleAddPersonalizedSubmit} className={modalStyles.form}>
+                                        <div className={modalStyles.formGroup}>
+                                            <label className={modalStyles.label}>{t('name_label')}</label>
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                value={addPersonalizedFormData.name}
+                                                onChange={handleAddPersonalizedChange}
+                                                className={modalStyles.input}
+                                                required
+                                                disabled={isAddModalLoading}
+                                            />
+                                        </div>
+                                        <button type="submit" className={modalStyles.submitButton} disabled={isAddModalLoading || !addPersonalizedFormData.name.trim()}>
+                                            {loadingAddPersonalized ? t('creating_button') : t('create_personalized_link_button')}
+                                        </button>
+                                    </form>
+                                </>
+                            )}
                         </div>
 
                         <div className={modalStyles.section}>
-                            <h3>Generic Invitation Link</h3>
-                            <p>Generate a link anyone can use to sign up for this event. (Only one generic link per event)</p>
+                            <h3>{t('generic_invitation_link_heading')}</h3>
+                            <p>{t('generic_invitation_help_text')}</p>
 
                             {currentGenericLink ? (
                                 <div className={modalStyles.genericLinkBox}>
-                                    <strong>Invitation Link:</strong>
+                                    <strong>{t('invitation_link_label')}:</strong>
                                     <p>
                                         <Link href={currentGenericLink} target="_blank" rel="noopener noreferrer">
                                             {currentGenericLink}
                                         </Link>
                                     </p>
-                                    <small>Share this link. Users will enter their name and email to join.</small>
+                                    <small>{t('generic_link_share_help_text')}</small>
                                     <button
                                         className={modalStyles.copyLinkButton}
-                                        onClick={() => navigator.clipboard.writeText(currentGenericLink).then(() => alert('Link copied!'))}
+
+                                        onClick={() => copyToClipboard(currentGenericLink, 'generic_link_copied_alert')}
                                     >
-                                        Copy Link
+                                        {t('copy_link_button')}
                                     </button>
                                 </div>
                             ) : (
@@ -797,7 +800,7 @@ export default function EditEventPage() {
                                     className={modalStyles.createLinkButton}
                                     disabled={isAddModalLoading}
                                 >
-                                    {loadingAddGeneric ? 'Generating Link...' : 'Generate Generic Link'}
+                                    {loadingAddGeneric ? t('generating_link_button') : t('generate_generic_link_button')}
                                 </button>
                             )}
                         </div>
