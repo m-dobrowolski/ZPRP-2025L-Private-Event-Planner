@@ -23,11 +23,7 @@ export default async function RootLayout({ children, params: { locale } }) {
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <TranslationsProvider locale={locale} namespaces={i18nNamespaces} resources={resources}>
                     <div className="layout-container">
-                        <header>
-                            <LanguageSwitcher/>
-                        </header>
-
-                         <aside className="sidebar">
+                        <aside className="sidebar">
                             <LayoutClient />
                         </aside>
 
@@ -35,7 +31,9 @@ export default async function RootLayout({ children, params: { locale } }) {
                             {children}
                         </main>
 
-                        <aside className="sidebar"></aside>
+                        <aside className="sidebar">
+                            <LanguageSwitcher/>
+                        </aside>
                     </div>
                 </TranslationsProvider>
             </body>
