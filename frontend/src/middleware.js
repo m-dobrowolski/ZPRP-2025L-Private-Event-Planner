@@ -49,7 +49,7 @@ export function middleware(request) {
         }
 
         request.nextUrl.pathname = `/${locale}${pathname}`;
-        return NextResponse.rewrite(request.nextUrl);
+        return NextResponse.redirect(request.nextUrl);
     }
 
     return undefined;
