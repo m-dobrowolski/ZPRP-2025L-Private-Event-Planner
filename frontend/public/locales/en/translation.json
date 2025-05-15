@@ -30,13 +30,16 @@
   "loading_invitation_details": "Loading invitation details...",
   "error_loading_invitation_prefix": "Error loading invitation",
   "invalid_invitation_uuid_error": "Invalid invitation UUID.",
-  "invited_to_event": "You've been invited to: <strong>{{eventName}}</strong>",
+  "invited_to_event": "You've been invited to: ",
   "your_name_label": "Your Name",
   "your_email_label": "Your Email",
   "joining_button": "Joining...",
   "join_event_button": "Join Event",
   "invalid_invitation_link_error": "Invalid invitation link.",
 
+  "event_details_page_title": "Event Details",
+  "not_available_abbr": "N/A",
+  "datetime_format": "{{date, datetime}}",
   "edit_event_title": "Edit Event: {{eventName}}",
   "edit_event_page_title": "Edit Event",
   "image_upload_help": "Select a new image to replace the current one.",
@@ -93,9 +96,9 @@
   "your_email_required_error": "Please enter your email to join.",
   "accept_personalized_failed_error": "Failed to accept invitation. It might be invalid or already used.",
   "personalized_invitation_accepted_alert": "Success! You have joined the event as \"{{name}}\".\n\nYour UUID is: \n{{uuid}}\n\nIMPORTANT: Please save this UUID as it can only be accessed once. It will be needed to comment on the event.",
-   "unnamed_participant": "Unnamed Participant",
-   "invitation_for": "Invitation for: <strong>{{name}}</strong>",
-   "invalid_or_used_personalized_invitation_error": "Invalid or used personalized invitation link.",
-   "accept_personalized_invitation_page_title": "Accept Personalized Invitation"
+  "unnamed_participant": "Unnamed Participant",
+  "invitation_for": "Invitation for: ",
+  "invalid_or_used_personalized_invitation_error": "Invalid or used personalized invitation link.",
+  "accept_personalized_invitation_page_title": "Accept Personalized Invitation"
 
 }

@@ -124,13 +124,13 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
 
             {eventDetails && (
                 <div className={styles.eventContext}>
-                    <p>{t('invited_to_event', { eventName: eventDetails.name })}</p>
+                    <p>{t('invited_to_event')} <strong>{ eventDetails.name }</strong></p>
                 </div>
             )}
 
             {invitationDetails && (
                 <div className={styles.eventContext}>
-                    <p>{t('invitation_for', { name: invitationDetails.name })}</p>
+                    <p>{t('invitation_for')} <strong>{ invitationDetails.name }</strong></p>
                 </div>
             )}
 

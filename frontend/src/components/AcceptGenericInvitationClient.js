@@ -115,7 +115,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
 
             {eventDetails && (
                 <div className={styles.eventContext}>
-                    <p>{t('invited_to_event', { eventName: eventDetails.name })}</p>
+                    <p>{t('invited_to_event')}  <strong>{ eventDetails.name }</strong></p>
                 </div>
             )}
 
