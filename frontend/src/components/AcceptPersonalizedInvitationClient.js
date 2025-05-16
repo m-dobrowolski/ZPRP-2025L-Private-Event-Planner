@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { acceptPersonalizedInvitation, getPersonalizedInvitationDetails } from '@/api/api';
 import styles from '@/styles/acceptInvitation.module.css';
 import { useTranslation } from 'react-i18next';
-
+import Link from 'next/link';
 
 export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
-    const router = useRouter();
     const { t } = useTranslation('translation');
 
     const [formData, setFormData] = useState({ name: '', email: '' }); 
@@ -18,6 +16,7 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
     const [errorDetails, setErrorDetails] = useState(null);
     const [invitationDetails, setInvitationDetails] = useState(null);
     const [eventDetails, setEventDetails] = useState(null);
+    const [success, setSuccess] = useState(null);
 
 
     useEffect(() => {
@@ -30,12 +29,10 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
         const fetchInvitationAndEvent = async () => {
             setLoadingDetails(true);
             setErrorDetails(null);
-
             try {
                 const data = await getPersonalizedInvitationDetails(invitationUuid);
 
                 if (data) {
-                     
                     setInvitationDetails({ name: data.name, uuid: data.uuid });
                     setFormData(prev => ({ ...prev, name: data.name || '' }));
                     setEventDetails({ name: data.event_name, uuid: data.event_uuid });
@@ -57,16 +54,14 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
-        if (name === 'email') {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccess(null);
 
         if (!invitationDetails) {
             setError(t('cannot_accept_details_not_loaded_error'));
@@ -83,19 +78,10 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
         try {
             const response = await acceptPersonalizedInvitation(invitationUuid, invitationDetails.name, formData.email.trim());
             console.log('Personalized invitation accepted, participant created:', response);
-
-            const successMessage = t('personalized_invitation_accepted_alert', {
-                name: response.name || t('unnamed_participant'),
+            setSuccess({
+                name: response.name,
                 uuid: response.uuid
             });
-            alert(successMessage);
-
-            if (response && response.event) {
-                router.push(`/event/${response.event}`);
-            } else {
-                 console.warn("Backend did not return event_uuid on personalized invitation acceptance.");
-                 router.push('/');
-            }
 
         } catch (err) {
             console.error('Error accepting personalized invitation:', err);
@@ -136,7 +122,22 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
 
             {error && <div className={styles.error}>{error}</div>}
 
-            {invitationDetails && eventDetails && (
+            {success && (
+                <div className={styles.success}>
+                    <h2>Success! You have joined the event.</h2>
+                    <p>
+                        Your URL: <br />
+                        <div className={styles.link}>
+                            <Link href={`/event/${success.event}?author_uuid=${success.uuid}`}>
+                                http://localhost:3000/api/event/{success.event}?author_uuid={success.uuid}
+                            </Link>
+                        </div>
+                    </p>
+                    <p className={styles.important}>IMPORTANT: Please save this URL as it can only be accessed once. It will be needed to comment on the event.</p>
+                </div>
+            )}
+
+            {!success && invitationDetails && eventDetails && (
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
                         <label className={styles.label}>{t('your_name_label')}</label>
@@ -159,7 +160,7 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
                             disabled={loading || loadingDetails} 
                         />
                     </div>
-                    <button type="submit" className={styles.submitButton} disabled={loading || loadingDetails || !formData.email.trim()}> {/* Disable if loading, details loading, or email is empty */}
+                    <button type="submit" className={styles.submitButton} disabled={loading || loadingDetails || !formData.email.trim()}>
                         {loading ? t('joining_button') : t('join_event_button')}
                     </button>
                 </form>

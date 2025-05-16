@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { getEventDetails, getComments, createComment } from '@/api/api';
+import { useParams, useSearchParams } from 'next/navigation';
+import { getEventDetails, getComments, createComment, getEventIcs } from '@/api/api';
 import styles from '@/app/[locale]/event/[uuid]/eventDetail.module.css';
 import { useTranslation } from 'react-i18next';
 
 export default function EventDetailsClient({ uuid: uuidProp }) {
     const params = useParams();
+    const searchParams = useSearchParams();
     const uuid = uuidProp || params.uuid;
+    const authorUuid = searchParams.get('author_uuid');
 
     const { t } = useTranslation('translation');
 
@@ -19,7 +21,7 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
     const [error, setError] = useState(null);
     const [popupError, setPopupError] = useState(null);
     const [showCommentForm, setShowCommentForm] = useState(false);
-    const [newComment, setNewComment] = useState({ author_uuid: '', content: '' });
+    const [newComment, setNewComment] = useState({ content: '' });
     const [submittingComment, setSubmittingComment] = useState(false);
     const [sortOrder, setSortOrder] = useState('newest');
 
@@ -30,13 +32,13 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
             setLoading(true);
             setError(null);
             try {
-                const [eventDataRes, commentsDataRes] = await Promise.all([
+                const [eventData, commentsData] = await Promise.all([
                     getEventDetails(uuid),
                     getComments(uuid)
                 ]);
-                setEventData(eventDataRes);
-                setParticipants(eventDataRes.participants || []);
-                const sortedComments = [...(commentsDataRes || [])].sort((a, b) => {
+                setEventData(eventData);
+                setParticipants(eventData.participants || []);
+                const sortedComments = [...(commentsData || [])].sort((a, b) => {
                     return new Date(b.date) - new Date(a.date);
                 });
                 setComments(sortedComments);
@@ -74,18 +76,18 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
     const handleCommentSubmit = async (e) => {
         e.preventDefault();
         setSubmittingComment(true);
-        setPopupError(null);
-
-        if (!newComment.author_uuid || !newComment.content) {
-            showErrorPopup(t('comment_fields_required_error'));
-            setSubmittingComment(false);
-            return;
-        }
+        // setPopupError(null);
+        //
+        // if (!newComment.author_uuid || !newComment.content) {
+        //     showErrorPopup(t('comment_fields_required_error'));
+        //     setSubmittingComment(false);
+        //     return;
+        // }
 
         try {
-            await createComment(uuid, newComment.author_uuid, newComment.content);
+            await createComment(uuid, authorUuid, newComment.content);
             const updatedComments = await getComments(uuid);
-
+            // Sort the comments according to current sort order
             const sortedComments = [...updatedComments].sort((a, b) => {
                 if (sortOrder === 'newest') {
                     return new Date(b.date) - new Date(a.date);
@@ -94,7 +96,7 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
                 }
             });
             setComments(sortedComments);
-            setNewComment({ author_uuid: '', content: '' });
+            setNewComment({ content: '' });
             setShowCommentForm(false);
         } catch (err) {
             const errorMessage = err.message || t('add_comment_failed_error');
@@ -116,6 +118,24 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
         });
         setComments(sortedComments);
     };
+
+    const exportEventICS = async () => {
+        try {
+            const icsData = await getEventIcs(uuid);
+            const blob = new Blob([icsData], { type: 'text/calendar' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'event.ics';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            showErrorPopup('Failed to export ICS file.');
+            console.error('Failed to export ICS: ', err);
+        }
+    }
 
     if (loading) {
         return <div className={styles.container}>{t('loading_event')}</div>;
@@ -145,15 +165,34 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
                 </div>
             )}
 
-            <div className={styles.detailItem}>
-                <strong>{t('location_label')}:</strong> {eventData.location}
+            <div className={styles.eventTimeLocationDetails}>
+                <div className={styles.eventDetailsLeft}>
+                    <div className={styles.detailItem}>
+                        <strong>{t('location_label')}:</strong> {eventData.location}
+                    </div>
+                    <div className={styles.detailItem}>
+                        <strong>{t('start_datetime_label')}:</strong> {formatDateTime(eventData.start_datetime)}
+                    </div>
+                    <div className={styles.detailItem}>
+                        <strong>{t('end_datetime_label')}:</strong> {formatDateTime(eventData.end_datetime)}
+                    </div>
+                </div>
+                <div className={styles.eventDetailsRight}>
+                    <div className={styles.rightDetailsButton}>
+                        <a
+                            href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventData.name)}&dates=${new Date(eventData.start_datetime).toISOString().replace(/-|:|\.\d+/g, '')}/${new Date(eventData.end_datetime).toISOString().replace(/-|:|\.\d+/g, '')}&details=${encodeURIComponent(eventData.description || '')}&location=${encodeURIComponent(eventData.location || '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Add to Google Calendar
+                        </a>
+                    </div>
+                    <div className={styles.rightDetailsButton}>
+                       <button onClick={exportEventICS}>Export as ICS</button>
+                    </div>
+                </div>
             </div>
-            <div className={styles.detailItem}>
-                <strong>{t('start_datetime_label')}:</strong> {formatDateTime(eventData.start_datetime)}
-            </div>
-            <div className={styles.detailItem}>
-                <strong>{t('end_datetime_label')}:</strong> {formatDateTime(eventData.end_datetime)}
-            </div>
+
             {eventData.organizer_name && (
                 <div className={styles.detailItem}>
                     <strong>{t('organizer_name_label')}:</strong> {eventData.organizer_name}
@@ -199,26 +238,17 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
 
             <div className={styles.section}>
                 <h2>{t('comments_heading', { count: comments.length })}</h2>
-                <button
-                    className={styles.addCommentButton}
-                    onClick={() => setShowCommentForm(!showCommentForm)}
-                >
-                    {showCommentForm ? t('cancel_comment_button') : t('add_comment_button')}
-                </button>
+                {authorUuid && (
+                    <button
+                        className={styles.addCommentButton}
+                        onClick={() => setShowCommentForm(!showCommentForm)}
+                    >
+                        {showCommentForm ? t('cancel_comment_button') : t('add_comment_button')}
+                    </button>
+                )}
 
-                {showCommentForm && (
+                {showCommentForm && authorUuid && (
                     <form onSubmit={handleCommentSubmit} className={styles.commentForm}>
-                        <div className={styles.formGroup}>
-                            <label htmlFor="author_uuid">{t('author_uuid_label')}:</label>
-                            <input
-                                type="text"
-                                id="author_uuid"
-                                value={newComment.author_uuid}
-                                onChange={(e) => setNewComment(prev => ({ ...prev, author_uuid: e.target.value }))}
-                                required
-                                className={styles.input}
-                            />
-                        </div>
                         <div className={styles.formGroup}>
                             <label htmlFor="content">{t('comment_label')}:</label>
                             <textarea

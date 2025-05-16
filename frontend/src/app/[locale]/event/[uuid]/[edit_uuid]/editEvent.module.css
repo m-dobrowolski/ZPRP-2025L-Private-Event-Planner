@@ -108,6 +108,7 @@
     overflow: hidden;
     overflow-y: auto;
     max-height: 300px;
+    animation: slideDown 0.3s ease-out;
 }
 
 .participantItem, .invitationItem {

@@ -19,7 +19,6 @@ import styles from '@/app/[locale]/event/[uuid]/[edit_uuid]/editEvent.module.css
 import modalStyles from '@/app/[locale]/event/[uuid]/[edit_uuid]/addParticipantModal.module.css';
 import { useTranslation } from 'react-i18next';
 
-
 export default function EditEventClient({ uuid, edit_uuid }) {
     const router = useRouter();
     const { t } = useTranslation('translation');
@@ -40,14 +39,17 @@ export default function EditEventClient({ uuid, edit_uuid }) {
 
     const [imagePreview, setImagePreview] = useState(null);
 
+    // Participant states
     const [participants, setParticipants] = useState([]);
     const [genericInvitations, setGenericInvitations] = useState([]);
     const [personalizedInvitations, setPersonalizedInvitations] = useState([]);
 
+    // Add participant modal
     const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
     const [addPersonalizedFormData, setAddPersonalizedFormData] = useState({ name: '' });
     const [createdPersonalizedLink, setCreatedPersonalizedLink] = useState(null);
 
+    // Loading states
     const [loadingFetch, setLoadingFetch] = useState(true);
     const [loadingSave, setLoadingSave] = useState(false);
     const [loadingDeleteEvent, setLoadingDeleteEvent] = useState(false);
@@ -57,6 +59,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
     const [loadingAddPersonalized, setLoadingAddPersonalized] = useState(false);
     const [loadingAddGeneric, setLoadingAddGeneric] = useState(false);
 
+    // Error states
     const [errorFetch, setErrorFetch] = useState(null);
     const [errorSave, setErrorSave] = useState(null);
     const [errorDeleteEvent, setErrorDeleteEvent] = useState(null);
@@ -70,6 +73,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
     const [comments, setComments] = useState([]);
     const [deletingCommentId, setDeletingCommentId] = useState(null);
     const [showComments, setShowComments] = useState(false);
+    const [showParticipants, setShowParticipants] = useState(false);
 
     const fetchEventData = async () => {
         setLoadingFetch(true);
@@ -105,9 +109,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             setParticipants(data.participants || []);
             setGenericInvitations(data.invitations || []);
             setPersonalizedInvitations(data.personalized_invitations || []);
-            // Sort comments by date (newest first initially)
-            const sortedComments = [...(commentsData || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
-            setComments(sortedComments);
+            setComments(commentsData || []);
 
         } catch (err) {
             setErrorFetch(err.message || t('fetch_edit_event_failed_error'));
@@ -175,7 +177,6 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             }
 
             await updateEvent(uuid, edit_uuid, formDataToSend);
-
             router.push(`/event/${uuid}`);
 
         } catch (error) {
@@ -303,15 +304,17 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             console.log('Personalized invitation created:', response);
 
             if (response && response.uuid) {
-                const invitationLink = `${window.location.origin}/personalized-invitation/accept/${response.uuid}`;
-                setCreatedPersonalizedLink(invitationLink);
-
-                fetchEventData();
+                 const invitationLink = `${window.location.origin}/personalized-invitation/accept/${response.uuid}`;
+                 setCreatedPersonalizedLink(invitationLink);
+                 setPersonalizedInvitations(prev => [...prev, response]);
+                 setAddPersonalizedFormData({ name: '' });
 
             } else {
                 console.error('API response missing invitation UUID:', response);
                 setErrorAddPersonalized(t('create_personalized_invalid_response_error'));
             }
+
+            await fetchEventData();
 
         } catch (error) {
             console.error('Error creating personalized invitation:', error);
@@ -335,7 +338,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             console.log('Generic invitation created:', response);
             alert(t('generic_invitation_created_alert'));
 
-            fetchEventData();
+            await fetchEventData();
 
         } catch (error) {
             console.error('Error creating generic invitation:', error);
@@ -373,9 +376,8 @@ export default function EditEventClient({ uuid, edit_uuid }) {
 
         try {
             await deleteComment(commentUuid, edit_uuid);
+            // Update comments list immediately
             setComments(prevComments => prevComments.filter(c => c.uuid !== commentUuid));
-
-
         } catch (error) {
             console.error(`Error deleting comment ${commentUuid}:`, error);
             const errorMessage = error.response?.data?.detail || error.message || t('delete_comment_failed_error', { author: authorName || t('unknown_author') });
@@ -392,7 +394,6 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             if (isNaN(date.getTime())) {
                 return datetimeString;
             }
-
         return date.toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
         } catch (e) {
@@ -400,7 +401,6 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             return datetimeString;
         }
     };
-
 
     if (loadingFetch) {
         return <div className={styles.container}>{t('loading_edit_event')}</div>;
@@ -422,7 +422,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             {errorDeleteComment && <div className={styles.error}>{errorDeleteComment}</div>}
 
 
-            <form id="editEventForm" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className={styles.form}>
+            <form id="editEventForm" onSubmit={ handleSubmit } className={styles.form}>
                 <div className={styles.formGroup}>
                     <label className={styles.label}>{t('event_name_label')}*</label>
                     <input
@@ -550,27 +550,39 @@ export default function EditEventClient({ uuid, edit_uuid }) {
 
             {/* --- Participants Section --- */}
             <div className={styles.section}>
-                <h2>{t('participants_heading', { count: participants.length })}</h2>
-                {participants.length > 0 ? (
-                    <ul className={styles.participantList}>
-                        {participants.map(participant => (
-
-                            <li key={participant.id} className={styles.participantItem}>
-                                <span>
-                                    {participant.name} {participant.email ? `(${participant.email})` : ''}
-                                </span>
-                                <button
-                                    className={styles.deleteParticipantButton}
-                                    onClick={() => handleDeleteParticipant(participant.id, participant.name)}
-                                    disabled={deletingParticipantId === participant.id || isMainActionLoading || isAddModalLoading}
-                                >
-                                    {deletingParticipantId === participant.id ? t('deleting_button') : t('delete_button')}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>{t('no_participants_yet')}</p>
+                <div className={styles.sectionHeader}>
+                    <h2>{t('participants_heading', { count: participants.length })}</h2>
+                    <button
+                        className={styles.toggleButton}
+                        onClick={() => setShowParticipants(!showParticipants)}
+                        aria-label={showParticipants ? "Hide participants" : "Show participants"}
+                    >
+                        {showParticipants ? '▲' : '▼'}
+                    </button>
+                </div>
+                {showParticipants && (
+                    <>
+                        {participants.length > 0 ? (
+                            <ul className={styles.participantList}>
+                                {participants.map(participant => (
+                                    <li key={participant.id} className={styles.participantItem}>
+                                        <span>
+                                            {participant.name} {participant.email ? `(${participant.email})` : ''}
+                                        </span>
+                                        <button
+                                            className={styles.deleteParticipantButton}
+                                            onClick={() => handleDeleteParticipant(participant.id, participant.name || 'Unnamed Participant')}
+                                            disabled={deletingParticipantId === participant.id || isMainActionLoading || isAddModalLoading}
+                                        >
+                                            {deletingParticipantId === participant.id ? t('deleting_button') : t('delete_button')}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>No participants have joined yet.</p>
+                        )}
+                    </>
                 )}
             </div>
 
@@ -601,7 +613,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                                         <p className={styles.commentContent}>{comment.content}</p>
                                         <button
                                             className={styles.deleteCommentButton}
-                                            onClick={() => handleDeleteComment(comment.uuid, comment.author)}
+                                            onClick={() => handleDeleteComment(comment.uuid, comment.author || 'Unknown Author')}
                                             disabled={deletingCommentId === comment.uuid || isMainActionLoading || isAddModalLoading}
                                         >
                                             {deletingCommentId === comment.uuid ? t('deleting_button') : t('delete_button')}
@@ -633,7 +645,6 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                                 </span>
                                 <button
                                     className={styles.copyLinkButton}
-
                                     onClick={() => copyToClipboard(`${window.location.origin}/invitation/accept/${invitation.uuid}`, 'generic_link_copied_alert')}
                                 >
                                     {t('copy_link_button')}
@@ -663,7 +674,6 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                                 </span>
                                 <button
                                     className={styles.copyLinkButton}
-
                                     onClick={() => copyToClipboard(`${window.location.origin}/personalized-invitation/accept/${invitation.uuid}`, 'personalized_link_copied_alert', { name: invitation.name })}
                                     disabled={deletingPersonalizedInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
                                 >
@@ -710,9 +720,8 @@ export default function EditEventClient({ uuid, edit_uuid }) {
 
             {/* --- Add Participant Modal --- */}
             {showAddParticipantModal && (
-
                 <div className={modalStyles.modalOverlay} onClick={closeAddParticipantModal}>
-                    <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+                    <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}> {/* Prevent clicks inside closing the modal */}
                         <button className={modalStyles.closeButton} onClick={closeAddParticipantModal}>×</button>
                         <h2>{t('add_participant_modal_title')}</h2>
 
@@ -788,7 +797,6 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                                     <small>{t('generic_link_share_help_text')}</small>
                                     <button
                                         className={modalStyles.copyLinkButton}
-
                                         onClick={() => copyToClipboard(currentGenericLink, 'generic_link_copied_alert')}
                                     >
                                         {t('copy_link_button')}
