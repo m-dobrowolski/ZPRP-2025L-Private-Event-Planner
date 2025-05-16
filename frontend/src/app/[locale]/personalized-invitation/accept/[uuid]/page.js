@@ -1,4 +1,4 @@
-import { initTranslations } from '@/lib/i18n.server';
+import { initTranslations } from '@/i18next/i18n.server';
 import TranslationsProvider from '@/components/TranslationsProvider'; 
 import i18nConfig from '&/next-i18next.config'; 
 import AcceptPersonalizedInvitationClient from '@/components/AcceptPersonalizedInvitationClient'; 
