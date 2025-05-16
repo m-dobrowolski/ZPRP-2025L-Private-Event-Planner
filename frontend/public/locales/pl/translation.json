@@ -26,6 +26,9 @@
   "newest_first_sort": "Od najnowszych",
   "oldest_first_sort": "Od najstarszych",
   "no_comments_yet": "Brak komentarzy.",
+  "comment_label": "Komentarz",
+  "cancel_comment_button": "Anuluj",
+  "submit_comment_button": "Dodaj komentarz",
 
   "loading_invitation_details": "Ładowanie szczegółów zaproszenia...",
   "error_loading_invitation_prefix": "Błąd ładowania zaproszenia",
@@ -49,6 +52,7 @@
   "no_personalized_invitations_yet": "Nie utworzono jeszcze spersonalizowanych zaproszeń.",
   "save_changes_button": "Zapisz zmiany",
   "delete_event_button": "Usuń wydarzenie",
+  "deleting_event": "Usuwanie...",
 
   "add_new_participant_button": "Dodaj nowego uczestnika / zaproszenie",
   "add_participant_modal_title": "Dodaj uczestnika lub zaproszenie",
@@ -78,6 +82,7 @@
   "confirm_delete_generic_invitation": "Czy na pewno chcesz usunąć ten uniwersalny link zaproszenia? Nie będzie on już użyteczny.",
   "personalized_invitation_deleted_success": "Zaproszenie dla „{{name}}” zostało pomyślnie usunięte.",
   "generic_invitation_deleted_success": "Uniwersalny link zaproszenia został pomyślnie usunięty.",
+  "copy_failed_alert": "Nie udało się zkopiować linku.",
 
   "accept_generic_invitation_title": "Przyjmij zaproszenie na wydarzenie",
   "load_event_details_unexpected_response_error": "Nie można załadować szczegółów wydarzenia z powodu nieoczekiwanej odpowiedzi.",
