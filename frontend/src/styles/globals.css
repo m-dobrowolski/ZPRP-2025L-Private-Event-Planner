@@ -76,3 +76,19 @@ body {
   border-radius: 15px;
   border: 2px solid #ffffff;
 }
+
+.language-switcher {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.locale-link {
+    display: inline-block;
+    text-decoration: none;
+    padding-top: 15px;
+}
+
+.locale-link img {
+    display: block;
+}
