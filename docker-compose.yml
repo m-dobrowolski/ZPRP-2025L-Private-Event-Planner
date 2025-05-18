@@ -1,6 +1,19 @@
 version: '3.9'
 
 services:
+  reverse-proxy:
+    image: nginx:1.27.3
+    restart: always
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx:/etc/nginx/templates
+      - media:/backend/media
+      - static:/backend/static
+    depends_on:
+      - backend
+      - frontend
   frontend:
     build:
       context: ./frontend
@@ -10,10 +23,12 @@ services:
 
   db:
     image: postgres:15
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -28,15 +43,20 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    env_file:
+      - .env
     restart: always
 
   backend:
     command: >
       sh -c "./wait-for-it.sh db:5432 --
+      && python manage.py collectstatic --no-input
       && python manage.py migrate
-      && python manage.py runserver 0.0.0:8000"
+      && gunicorn private_event_planner.wsgi:application --bind 0.0.0.0:8000"
     build:
       context: ./backend
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     expose:
@@ -60,7 +80,8 @@ services:
       - db
       - rabbitmq
     volumes:
-      - ./backend:/app
+      - media:/app/media
+      - static:/app/static
 
   worker:
     build:
@@ -150,3 +171,5 @@ services:
 
 volumes:
   postgres_data:
+  media:
+  static:

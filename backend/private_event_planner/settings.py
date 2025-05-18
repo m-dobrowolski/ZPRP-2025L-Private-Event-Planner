@@ -23,12 +23,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # The physical path where files are
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%azik!hgm9*71m6s^4c4le51_hh&%k6_p8g!e)oppr)s6m8hc!'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS =  ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -44,7 +45,6 @@ INSTALLED_APPS = [
     'django_dramatiq',
     'events.apps.EventsConfig',
     'drf_spectacular',
-    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -55,7 +55,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 REST_FRAMEWORK = {
@@ -157,16 +156,13 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT= os.path.join(BASE_DIR,'static/')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# CHANGE LATER !!!
-CORS_ORIGIN_ALLOW_ALL = True

@@ -139,3 +139,5 @@ GitHub.sublime-settings
 
 /.idea
 event_images/
+backend/static/
+logs/nginx_logs

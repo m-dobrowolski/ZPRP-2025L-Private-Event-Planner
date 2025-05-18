@@ -88,12 +88,12 @@ class EventAdminSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
 
         if instance.image and hasattr(instance.image, 'url'):
-             request = self.context.get('request')
-             if request is not None:
-                 full_url = request.build_absolute_uri(instance.image.url)
-                 representation['image'] = full_url
-             else:
-                 representation['image'] = f"http://localhost:8000{instance.image.url}"
+            request = self.context.get('request')
+            if request is not None:
+                full_url = full_url.replace('http://localhost:8000', 'http://localhost')
+                representation['image'] = full_url
+            else:
+                representation['image'] = f"http://localhost{instance.image.url}"
 
         return representation
 
@@ -127,9 +127,10 @@ class EventSerializer(serializers.ModelSerializer):
         if obj.image and hasattr(obj.image, 'url'):
             request = self.context.get('request')
             if request is not None:
-                return request.build_absolute_uri(obj.image.url)
+                return request.build_absolute_uri(obj.image.url).replace(
+                    'http://localhost:8000', 'http://localhost')
             else:
-                return f"http://localhost:8000{obj.image.url}"
+                return f"http://localhost{obj.image.url}"
         return None
 
 
