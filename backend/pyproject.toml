@@ -1,0 +1,30 @@
+[project]
+name = "Private_Event_Planner"
+version = "0.9.0"
+description = "Private Event Planner is an application designed for organizing private events intuitively. It allows users to create and manage events in an easy way. Events can be accessed only by direct link, generated on event creation. This provides a secure way of sharing events with others. In order to create event user must provide basic information about event and his email address. Email address is used to send editing link to user. Application also allows to export events to ICS format and to add them on google calendar."
+authors = [
+    { name="Michał Goławski", email="michal.golawski3.stud@pw.edu.pl" },
+    { name="Marcin Sikorski", email="marcin.sikorski3.stud@pw.edu.pl" },
+    { name="Maciej Dobrowolski", email="maciej.dobrowolski2.stud@pw.edu.pl" }
+]
+requires-python = ">=3.10"
+
+dependencies = [
+    "Django==5.0.0",
+    "djangorestframework==3.15.0",
+    "dramatiq[rabbitmq]==1.14.0",
+    "django-dramatiq==0.13.0",
+    "Pillow==11.1.0",
+    "psycopg2-binary==2.9.9",
+    "factory-boy==3.3.3",
+    "ics==0.7.2",
+    "drf_spectacular==0.28.0",
+    "gunicorn==23.0.0"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["private_event_planner*", "events*"]

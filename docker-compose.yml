@@ -23,8 +23,6 @@ services:
 
   db:
     image: postgres:15
-    env_file:
-      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_NAME}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -43,8 +41,6 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-    env_file:
-      - .env
     restart: always
 
   backend:
@@ -55,13 +51,12 @@ services:
       && gunicorn private_event_planner.wsgi:application --bind 0.0.0.0:8000"
     build:
       context: ./backend
-    env_file:
-      - .env
     ports:
       - "8000:8000"
     expose:
       - 8000
     environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -91,6 +86,7 @@ services:
       && ./wait-for-it.sh rabbitmq:5672 --
       && python manage.py rundramatiq"
     environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -118,6 +114,7 @@ services:
       && ./wait-for-it.sh rabbitmq:5672 --
       && python manage.py rundramatiq"
     environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -147,6 +144,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
