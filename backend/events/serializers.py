@@ -10,7 +10,7 @@ class ParticipantSerializer(serializers.ModelSerializer):
         fields = ['name', 'id', 'email']
 
 
-class InvitationSerializer(serializers.ModelSerializer):
+class InvitationCreateSerializer(serializers.ModelSerializer):
     event = serializers.SlugRelatedField(slug_field='uuid',
                                          queryset=Event.objects.all(), many=False)
     event_edit_uuid = serializers.UUIDField(write_only=True)
@@ -30,10 +30,10 @@ class InvitationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return Invitation.objects.create(event=validated_data['event'])
 
-class PersonalizedInvitationSerializer(InvitationSerializer):
-    class Meta(InvitationSerializer.Meta):
+class PersInvCreateSerializer(InvitationCreateSerializer):
+    class Meta(InvitationCreateSerializer.Meta):
         model = PersonalizedInvitation
-        fields = InvitationSerializer.Meta.fields + ['name']
+        fields = InvitationCreateSerializer.Meta.fields + ['name']
 
     def create(self, validated_data):
         return PersonalizedInvitation.objects.create(event=validated_data['event'],
@@ -75,8 +75,8 @@ class CommentSerializer(serializers.ModelSerializer):
 class EventAdminSerializer(serializers.ModelSerializer):
     """Used for creating, editing events and for retrieving them as admin of the event."""
     participants = ParticipantSerializer(many=True, read_only=True)
-    invitations = InvitationSerializer(many=True, read_only=True)
-    personalized_invitations = PersonalizedInvitationSerializer(many=True, read_only=True)
+    invitations = InvitationCreateSerializer(many=True, read_only=True)
+    personalized_invitations = PersInvCreateSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
     read_only_fields = ['id', 'uuid', 'edit_uuid']
 
@@ -90,6 +90,7 @@ class EventAdminSerializer(serializers.ModelSerializer):
         if instance.image and hasattr(instance.image, 'url'):
             request = self.context.get('request')
             if request is not None:
+                full_url = request.build_absolute_uri(instance.image.url)
                 full_url = full_url.replace('http://localhost:8000', 'http://localhost')
                 representation['image'] = full_url
             else:
@@ -134,7 +135,7 @@ class EventSerializer(serializers.ModelSerializer):
         return None
 
 
-class AcceptInvitationSerializer(serializers.ModelSerializer):
+class InvitationAcceptSerializer(serializers.ModelSerializer):
     invitation = serializers.SlugRelatedField(slug_field='uuid', write_only=True,
                                               queryset=Invitation.objects.all(), many=False)
     event = serializers.SlugRelatedField(slug_field='uuid', read_only=True)
@@ -166,13 +167,13 @@ class InvitationDetailsSerializer(serializers.ModelSerializer):
         fields = ['event_name', 'event_uuid']
 
 
-class AcceptPersonalizedInvitationSerializer(AcceptInvitationSerializer):
+class PersInvAcceptSerializer(InvitationAcceptSerializer):
     invitation = serializers.SlugRelatedField(slug_field='uuid', write_only=True,
                                               queryset=PersonalizedInvitation.objects.all(), many=False)
     event = serializers.SlugRelatedField(slug_field='uuid', read_only=True)
 
-    class Meta(AcceptInvitationSerializer.Meta):
-        read_only_fields = AcceptInvitationSerializer.Meta.read_only_fields + ['name']
+    class Meta(InvitationAcceptSerializer.Meta):
+        read_only_fields = InvitationAcceptSerializer.Meta.read_only_fields + ['name']
 
     def create(self, validated_data):
         invitation = validated_data.pop('invitation')
@@ -183,7 +184,7 @@ class AcceptPersonalizedInvitationSerializer(AcceptInvitationSerializer):
             invitation.delete()
         return participant
 
-class PersonalizedInvitationDetailsSerializer(serializers.ModelSerializer):
+class PersInvDetailsSerializer(serializers.ModelSerializer):
     name = serializers.CharField(read_only=True)
     event_name = serializers.CharField(source='event.name', read_only=True)
     event_uuid = serializers.UUIDField(source='event.uuid', read_only=True)

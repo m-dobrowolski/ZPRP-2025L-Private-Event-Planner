@@ -11,6 +11,7 @@ services:
       - ./nginx:/etc/nginx/templates
       - media:/backend/media
       - static:/backend/static
+      - .logs:/var/log/nginx
     depends_on:
       - backend
       - frontend
@@ -138,6 +139,7 @@ services:
   test_runner:
     command: >
       sh -c "./wait-for-it.sh db:5432 --
+      && ./wait-for-it.sh rabbitmq:5672 --
       && python manage.py test"
     build:
       context: ./backend
@@ -164,8 +166,7 @@ services:
     depends_on:
       - db
       - rabbitmq
-    volumes:
-      - ./backend:/app
+      - test_worker
 
 volumes:
   postgres_data:

@@ -154,7 +154,8 @@ export default function EditEventClient({ uuid, edit_uuid }) {
         }
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         setLoadingSave(true);
         setErrorSave(null);
 
@@ -177,6 +178,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             }
 
             await updateEvent(uuid, edit_uuid, formDataToSend);
+            console.log(uuid)
             router.push(`/event/${uuid}`);
 
         } catch (error) {

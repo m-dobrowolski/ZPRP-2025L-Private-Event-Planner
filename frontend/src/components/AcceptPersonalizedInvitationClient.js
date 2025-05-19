@@ -9,7 +9,7 @@ import Link from 'next/link';
 export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
     const { t } = useTranslation('translation');
 
-    const [formData, setFormData] = useState({ name: '', email: '' }); 
+    const [formData, setFormData] = useState({ name: '', email: '' });
     const [loading, setLoading] = useState(false);
     const [loadingDetails, setLoadingDetails] = useState(true);
     const [error, setError] = useState(null);
@@ -69,8 +69,8 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
             return;
         }
 
-        if (!formData.email.trim()) { 
-            setError(t('your_email_required_error')); 
+        if (!formData.email.trim()) {
+            setError(t('your_email_required_error'));
             setLoading(false);
             return;
         }
@@ -80,12 +80,13 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
             console.log('Personalized invitation accepted, participant created:', response);
             setSuccess({
                 name: response.name,
-                uuid: response.uuid
+                uuid: response.uuid,
+                event: response.event
             });
 
         } catch (err) {
             console.error('Error accepting personalized invitation:', err);
-            const errorMessage = err.response?.data?.detail || err.message || t('accept_personalized_failed_error'); 
+            const errorMessage = err.response?.data?.detail || err.message || t('accept_personalized_failed_error');
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -93,15 +94,15 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
     };
 
     if (loadingDetails) {
-         return <div className={styles.container}>{t('loading_invitation_details')}</div>; 
+         return <div className={styles.container}>{t('loading_invitation_details')}</div>;
     }
 
     if (errorDetails) {
-         return <div className={`${styles.container} ${styles.error}`}>{t('error_loading_invitation_prefix')}: {errorDetails}</div>; 
+         return <div className={`${styles.container} ${styles.error}`}>{t('error_loading_invitation_prefix')}: {errorDetails}</div>;
     }
 
     if (!invitationDetails || !eventDetails) {
-        return <div className={`${styles.container} ${styles.error}`}>{t('invalid_or_used_personalized_invitation_error')}</div>; 
+        return <div className={`${styles.container} ${styles.error}`}>{t('invalid_or_used_personalized_invitation_error')}</div>;
     }
 
     return (
@@ -143,9 +144,9 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
                         <label className={styles.label}>{t('your_name_label')}</label>
                         <input
                             type="text"
-                            value={invitationDetails.name || ''} 
+                            value={invitationDetails.name || ''}
                             className={styles.input}
-                            disabled={true} 
+                            disabled={true}
                         />
                     </div>
                     <div className={styles.formGroup}>
@@ -157,7 +158,7 @@ export default function AcceptPersonalizedInvitationClient({ invitationUuid }) {
                             onChange={handleChange}
                             className={styles.input}
                             required
-                            disabled={loading || loadingDetails} 
+                            disabled={loading || loadingDetails}
                         />
                     </div>
                     <button type="submit" className={styles.submitButton} disabled={loading || loadingDetails || !formData.email.trim()}>
