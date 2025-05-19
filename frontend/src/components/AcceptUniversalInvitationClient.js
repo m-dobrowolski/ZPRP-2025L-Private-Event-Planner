@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { acceptGenericInvitation, getGenericInvitationDetails } from '@/api/api';
+import { acceptUniversalInvitation, getUniversalInvitationDetails } from '@/api/api';
 import styles from '@/styles/acceptInvitation.module.css';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link'
 
-export default function AcceptGenericInvitationClient({ invitationUuid }) {
+export default function AcceptUniversalInvitationClient({ invitationUuid }) {
     const { t } = useTranslation('translation');
 
     const [formData, setFormData] = useState({ name: '', email: '' });
@@ -28,7 +28,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
             setLoadingDetails(true);
             setErrorDetails(null);
             try {
-                const data = await getGenericInvitationDetails(invitationUuid);
+                const data = await getUniversalInvitationDetails(invitationUuid);
 
                 if (data && data.event_name && data.event_uuid) {
                     setEventDetails({ name: data.event_name, uuid: data.event_uuid });
@@ -38,7 +38,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
                 }
 
             } catch (err) {
-                console.error("Failed to fetch event context for generic invitation:", err);
+                console.error("Failed to fetch event context for universal invitation:", err);
                 const errorMessage = t('load_event_details_failed_error');
                 setErrorDetails(errorMessage);
             } finally {
@@ -74,7 +74,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
         }
 
         try {
-            const response = await acceptGenericInvitation(invitationUuid, formData.name.trim(), formData.email.trim());
+            const response = await acceptUniversalInvitation(invitationUuid, formData.name.trim(), formData.email.trim());
 
             console.log('Invitation accepted, participant created:', response);
             setSuccess({
@@ -84,7 +84,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
 
         } catch (err) {
             console.error('Error accepting invitation:', err);
-            const errorMessage = err.response?.data?.detail || err.message || t('accept_generic_failed_error');
+            const errorMessage = t('accept_universal_failed_error');
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -105,7 +105,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>{t('accept_generic_invitation_title')}</h1>
+            <h1 className={styles.title}>{t('accept_universal_invitation_title')}</h1>
 
             {eventDetails && (
                 <div className={styles.eventContext}>

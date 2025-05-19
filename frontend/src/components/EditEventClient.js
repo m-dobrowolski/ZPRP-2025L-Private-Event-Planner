@@ -8,10 +8,10 @@ import {
     updateEvent,
     deleteEvent,
     deleteParticipantAsAdmin,
-    deleteGenericInvitation,
+    deleteUniversalInvitation,
     deletePersonalizedInvitation,
     createPersonalizedInvitation,
-    createGenericInvitation,
+    createUniversalInvitation,
     getComments,
     deleteComment
 } from '@/api/api';
@@ -41,7 +41,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
 
     // Participant states
     const [participants, setParticipants] = useState([]);
-    const [genericInvitations, setGenericInvitations] = useState([]);
+    const [universalInvitations, setUniversalInvitations] = useState([]);
     const [personalizedInvitations, setPersonalizedInvitations] = useState([]);
 
     // Add participant modal
@@ -54,20 +54,20 @@ export default function EditEventClient({ uuid, edit_uuid }) {
     const [loadingSave, setLoadingSave] = useState(false);
     const [loadingDeleteEvent, setLoadingDeleteEvent] = useState(false);
     const [deletingParticipantId, setDeletingParticipantId] = useState(null);
-    const [deletingGenericInvitationUuid, setDeletingGenericInvitationUuid] = useState(null);
+    const [deletingUniversalInvitationUuid, setDeletingUniversalInvitationUuid] = useState(null);
     const [deletingPersonalizedInvitationUuid, setDeletingPersonalizedInvitationUuid] = useState(null);
     const [loadingAddPersonalized, setLoadingAddPersonalized] = useState(false);
-    const [loadingAddGeneric, setLoadingAddGeneric] = useState(false);
+    const [loadingAddUniversal, setLoadingAddUniversal] = useState(false);
 
     // Error states
     const [errorFetch, setErrorFetch] = useState(null);
     const [errorSave, setErrorSave] = useState(null);
     const [errorDeleteEvent, setErrorDeleteEvent] = useState(null);
     const [errorDeleteParticipant, setErrorDeleteParticipant] = useState(null);
-    const [errorDeleteGenericInvitation, setErrorDeleteGenericInvitation] = useState(null);
+    const [errorDeleteUniversalInvitation, setErrorDeleteUniversalInvitation] = useState(null);
     const [errorDeletePersonalizedInvitation, setErrorDeletePersonalizedInvitation] = useState(null);
     const [errorAddPersonalized, setErrorAddPersonalized] = useState(null);
-    const [errorAddGeneric, setErrorAddGeneric] = useState(null);
+    const [errorAddUniversal, setErrorAddUniversal] = useState(null);
     const [errorDeleteComment, setErrorDeleteComment] = useState(null);
 
     const [comments, setComments] = useState([]);
@@ -79,10 +79,10 @@ export default function EditEventClient({ uuid, edit_uuid }) {
         setLoadingFetch(true);
         setErrorFetch(null);
         setErrorDeleteParticipant(null);
-        setErrorDeleteGenericInvitation(null);
+        setErrorDeleteUniversalInvitation(null);
         setErrorDeletePersonalizedInvitation(null);
         setErrorAddPersonalized(null);
-        setErrorAddGeneric(null);
+        setErrorAddUniversal(null);
         setErrorDeleteComment(null);
 
         try {
@@ -107,7 +107,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             setImagePreview(data.image || null);
 
             setParticipants(data.participants || []);
-            setGenericInvitations(data.invitations || []);
+            setUniversalInvitations(data.invitations || []);
             setPersonalizedInvitations(data.personalized_invitations || []);
             setComments(commentsData || []);
 
@@ -229,22 +229,22 @@ export default function EditEventClient({ uuid, edit_uuid }) {
          }
     };
 
-    const handleDeleteGenericInvitation = async (invitationUuid) => {
-        if (!confirm(t('confirm_delete_generic_invitation'))) {
+    const handleDeleteUniversalInvitation = async (invitationUuid) => {
+        if (!confirm(t('confirm_delete_universal_invitation'))) {
             return;
         }
-        setDeletingGenericInvitationUuid(invitationUuid);
-        setErrorDeleteGenericInvitation(null);
+        setDeletingUniversalInvitationUuid(invitationUuid);
+        setErrorDeleteUniversalInvitation(null);
         try {
-            await deleteGenericInvitation(invitationUuid, edit_uuid);
-            setGenericInvitations(genericInvitations.filter(inv => inv.uuid !== invitationUuid));
-            alert(t('generic_invitation_deleted_success'));
+            await deleteUniversalInvitation(invitationUuid, edit_uuid);
+            setUniversalInvitations(universalInvitations.filter(inv => inv.uuid !== invitationUuid));
+            alert(t('universal_invitation_deleted_success'));
         } catch (error) {
-             console.error(`Error deleting generic invitation ${invitationUuid}:`, error);
-             const errorMessage = error.response?.data?.detail || error.message || t('delete_generic_invitation_failed_error');
-             setErrorDeleteGenericInvitation(errorMessage);
+             console.error(`Error deleting universal invitation ${invitationUuid}:`, error);
+             const errorMessage = error.response?.data?.detail || error.message || t('delete_universal_invitation_failed_error');
+             setErrorDeleteUniversalInvitation(errorMessage);
         } finally {
-             setDeletingGenericInvitationUuid(null);
+             setDeletingUniversalInvitationUuid(null);
         }
     };
 
@@ -272,7 +272,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
         setAddPersonalizedFormData({ name: '' });
         setCreatedPersonalizedLink(null);
         setErrorAddPersonalized(null);
-        setErrorAddGeneric(null);
+        setErrorAddUniversal(null);
     };
 
     const closeAddParticipantModal = () => {
@@ -325,27 +325,27 @@ export default function EditEventClient({ uuid, edit_uuid }) {
         }
     };
 
-    const handleCreateGenericInvitation = async () => {
-        if (genericInvitations.length > 0) {
-            setErrorAddGeneric(t('generic_invitation_exists_error'));
+    const handleCreateUniversalInvitation = async () => {
+        if (universalInvitations.length > 0) {
+            setErrorAddUniversal(t('universal_invitation_exists_error'));
             return;
         }
 
-        setLoadingAddGeneric(true);
-        setErrorAddGeneric(null);
+        setLoadingAddUniversal(true);
+        setErrorAddUniversal(null);
         try {
-            const response = await createGenericInvitation(uuid, edit_uuid);
-            console.log('Generic invitation created:', response);
-            alert(t('generic_invitation_created_alert'));
+            const response = await createUniversalInvitation(uuid, edit_uuid);
+            console.log('Universal invitation created:', response);
+            alert(t('universal_invitation_created_alert'));
 
             await fetchEventData();
 
         } catch (error) {
-            console.error('Error creating generic invitation:', error);
-            const errorMessage = error.response?.data?.detail || error.message || t('create_generic_failed_error');
-            setErrorAddGeneric(errorMessage);
+            console.error('Error creating universal invitation:', error);
+            const errorMessage = error.response?.data?.detail || error.message || t('create_universal_failed_error');
+            setErrorAddUniversal(errorMessage);
         } finally {
-            setLoadingAddGeneric(false);
+            setLoadingAddUniversal(false);
         }
     };
 
@@ -358,13 +358,13 @@ export default function EditEventClient({ uuid, edit_uuid }) {
         });
     };
 
-    const currentGenericLink = genericInvitations.length > 0 ?
-        `${window.location.origin}/invitation/accept/${genericInvitations[0].uuid}` : null;
+    const currentUniversalLink = universalInvitations.length > 0 ?
+        `${window.location.origin}/invitation/accept/${universalInvitations[0].uuid}` : null;
 
 
-    const isMainActionLoading = loadingSave || loadingDeleteEvent || deletingParticipantId !== null || deletingGenericInvitationUuid !== null || deletingPersonalizedInvitationUuid !== null;
+    const isMainActionLoading = loadingSave || loadingDeleteEvent || deletingParticipantId !== null || deletingUniversalInvitationUuid !== null || deletingPersonalizedInvitationUuid !== null;
 
-    const isAddModalLoading = loadingAddPersonalized || loadingAddGeneric;
+    const isAddModalLoading = loadingAddPersonalized || loadingAddUniversal;
 
     const handleDeleteComment = async (commentUuid, authorName) => {
         if (!confirm(t('confirm_delete_comment', { author: authorName || t('unknown_author') }))) {
@@ -417,7 +417,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             {errorSave && <div className={styles.error}>{errorSave}</div>}
             {errorDeleteEvent && <div className={styles.error}>{errorDeleteEvent}</div>}
             {errorDeleteParticipant && <div className={styles.error}>{errorDeleteParticipant}</div>}
-            {errorDeleteGenericInvitation && <div className={styles.error}>{errorDeleteGenericInvitation}</div>}
+            {errorDeleteUniversalInvitation && <div className={styles.error}>{errorDeleteUniversalInvitation}</div>}
             {errorDeletePersonalizedInvitation && <div className={styles.error}>{errorDeletePersonalizedInvitation}</div>}
             {errorDeleteComment && <div className={styles.error}>{errorDeleteComment}</div>}
 
@@ -632,11 +632,11 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             {/* --- Invitations Section --- */}
             <div className={styles.section}>
 
-                {/* Generic Invitations */}
+                {/* Universal Invitations */}
                 <h3>{t('universal_invitation_link_heading')}</h3>
-                {genericInvitations.length > 0 ? (
+                {universalInvitations.length > 0 ? (
                     <ul className={styles.invitationList}>
-                        {genericInvitations.map(invitation => (
+                        {universalInvitations.map(invitation => (
                             <li key={invitation.uuid} className={styles.invitationItem}>
                                 <span>
                                     {t('link_label')}: <Link href={`/invitation/accept/${invitation.uuid}`} target="_blank" rel="noopener noreferrer">
@@ -645,16 +645,16 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                                 </span>
                                 <button
                                     className={styles.copyLinkButton}
-                                    onClick={() => copyToClipboard(`${window.location.origin}/invitation/accept/${invitation.uuid}`, 'generic_link_copied_alert')}
+                                    onClick={() => copyToClipboard(`${window.location.origin}/invitation/accept/${invitation.uuid}`, 'universal_link_copied_alert')}
                                 >
                                     {t('copy_link_button')}
                                 </button>
                                 <button
                                     className={styles.deleteInvitationButton}
-                                    onClick={() => handleDeleteGenericInvitation(invitation.uuid)}
-                                    disabled={deletingGenericInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
+                                    onClick={() => handleDeleteUniversalInvitation(invitation.uuid)}
+                                    disabled={deletingUniversalInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
                                 >
-                                    {deletingGenericInvitationUuid === invitation.uuid ? t('deleting_button') : t('delete_link_button')}
+                                    {deletingUniversalInvitationUuid === invitation.uuid ? t('deleting_button') : t('delete_link_button')}
                                 </button>
                             </li>
                         ))}
@@ -727,12 +727,12 @@ export default function EditEventClient({ uuid, edit_uuid }) {
 
                         {isAddModalLoading && <div className={modalStyles.loading}>{t('processing_message')}</div>}
                         {errorAddPersonalized && <div className={modalStyles.error}>{errorAddPersonalized}</div>}
-                        {errorAddGeneric && <div className={modalStyles.error}>{errorAddGeneric}</div>}
+                        {errorAddUniversal && <div className={modalStyles.error}>{errorAddUniversal}</div>}
 
                         <div className={modalStyles.section}>
                             <h3>{t('send_personalized_invitation_heading')}</h3>
                             {createdPersonalizedLink ? (
-                                <div className={modalStyles.genericLinkBox}>
+                                <div className={modalStyles.universalLinkBox}>
                                     <strong>{t('personalized_invitation_link_label')}:</strong>
                                     <p>
                                         <Link href={createdPersonalizedLink} target="_blank" rel="noopener noreferrer">
@@ -783,32 +783,32 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                         </div>
 
                         <div className={modalStyles.section}>
-                            <h3>{t('generic_invitation_link_heading')}</h3>
-                            <p>{t('generic_invitation_help_text')}</p>
+                            <h3>{t('universal_invitation_link_heading')}</h3>
+                            <p>{t('universal_invitation_help_text')}</p>
 
-                            {currentGenericLink ? (
-                                <div className={modalStyles.genericLinkBox}>
+                            {currentUniversalLink ? (
+                                <div className={modalStyles.universalLinkBox}>
                                     <strong>{t('invitation_link_label')}:</strong>
                                     <p>
-                                        <Link href={currentGenericLink} target="_blank" rel="noopener noreferrer">
-                                            {currentGenericLink}
+                                        <Link href={currentUniversalLink} target="_blank" rel="noopener noreferrer">
+                                            {currentUniversalLink}
                                         </Link>
                                     </p>
-                                    <small>{t('generic_link_share_help_text')}</small>
+                                    <small>{t('universal_link_share_help_text')}</small>
                                     <button
                                         className={modalStyles.copyLinkButton}
-                                        onClick={() => copyToClipboard(currentGenericLink, 'generic_link_copied_alert')}
+                                        onClick={() => copyToClipboard(currentUniversalLink, 'universal_link_copied_alert')}
                                     >
                                         {t('copy_link_button')}
                                     </button>
                                 </div>
                             ) : (
                                 <button
-                                    onClick={handleCreateGenericInvitation}
+                                    onClick={handleCreateUniversalInvitation}
                                     className={modalStyles.createLinkButton}
                                     disabled={isAddModalLoading}
                                 >
-                                    {loadingAddGeneric ? t('generating_link_button') : t('generate_generic_link_button')}
+                                    {loadingAddUniversal ? t('generating_link_button') : t('generate_universal_link_button')}
                                 </button>
                             )}
                         </div>
