@@ -90,7 +90,6 @@
   "invalid_expired_invitation_error": "Nieprawidłowy lub wygasły link zaproszenia.",
   "name_email_required_error": "Aby dołączyć, podaj swoje imię i adres e-mail.",
   "accept_generic_failed_error": "Nie udało się przyjąć zaproszenia.",
-  "generic_invitation_accepted_alert": "Sukces! Dołączyłeś/aś do wydarzenia.\n\nTwój UUID to: \n{{uuid}}\n\nWAŻNE: Prosimy o zapisanie tego UUID, ponieważ jest on dostępny tylko raz. Będzie potrzebny do komentowania wydarzenia.",
   "accept_generic_invitation_page_title": "Przyjmij zaproszenie",
 
   "accept_personalized_invitation_title": "Przyjmij spersonalizowane zaproszenie",
@@ -99,9 +98,11 @@
   "cannot_accept_details_not_loaded_error": "Nie można przyjąć zaproszenia: Szczegóły nie zostały załadowane.",
   "your_email_required_error": "Aby dołączyć, podaj swój adres e-mail.",
   "accept_personalized_failed_error": "Nie udało się przyjąć zaproszenia. Link może być nieprawidłowy lub został już użyty.",
-  "personalized_invitation_accepted_alert": "Sukces! Dołączyłeś/aś do wydarzenia jako „{{name}}”.\n\nTwój UUID to: \n{{uuid}}\n\nWAŻNE: Prosimy o zapisanie tego UUID, ponieważ jest on dostępny tylko raz. Będzie potrzebny do komentowania wydarzenia.",
   "unnamed_participant": "Uczestnik bez imienia",
   "invitation_for": "Zaproszenie dla: ",
   "invalid_or_used_personalized_invitation_error": "Nieprawidłowy lub użyty link spersonalizowanego zaproszenia.",
-  "accept_personalized_invitation_page_title": "Przyjmij spersonalizowane zaproszenie"
+  "accept_personalized_invitation_page_title": "Przyjmij spersonalizowane zaproszenie",
+
+  "invitation_save_url_message": "WAŻNE: Zapisz ten link, nie będzie on później dostępny. Jest potrzebny do komentowania wydarzenia.",
+  "invitation_joined_event_message": "Sukces! Dołączono do wydarzenia."
 }

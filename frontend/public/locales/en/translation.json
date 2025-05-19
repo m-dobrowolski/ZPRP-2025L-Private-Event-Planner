@@ -30,16 +30,6 @@
   "cancel_comment_button": "Cancel",
   "submit_comment_button": "Add comment",
 
-  "loading_invitation_details": "Loading invitation details...",
-  "error_loading_invitation_prefix": "Error loading invitation",
-  "invalid_invitation_uuid_error": "Invalid invitation UUID.",
-  "invited_to_event": "You've been invited to: ",
-  "your_name_label": "Your Name",
-  "your_email_label": "Your Email",
-  "joining_button": "Joining...",
-  "join_event_button": "Join Event",
-  "invalid_invitation_link_error": "Invalid invitation link.",
-
   "event_details_page_title": "Event Details",
   "not_available_abbr": "N/A",
   "datetime_format": "{{date, datetime}}",
@@ -84,15 +74,23 @@
   "generic_invitation_deleted_success": "Generic invitation deleted successfully.",
   "copy_failed_alert": "Copy Link failed.",
 
+  "loading_invitation_details": "Loading invitation details...",
+  "error_loading_invitation_prefix": "Error loading invitation",
+  "invalid_invitation_uuid_error": "Invalid invitation UUID.",
+  "invited_to_event": "You've been invited to: ",
+  "your_name_label": "Your Name",
+  "your_email_label": "Your Email",
+  "joining_button": "Joining...",
+  "join_event_button": "Join Event",
+  "invalid_invitation_link_error": "Invalid invitation link.",
+
   "accept_generic_invitation_title": "Accept Event Invitation",
   "load_event_details_unexpected_response_error": "Could not load event details due to an unexpected response.",
   "load_event_details_failed_error": "Could not load event details for this invitation.",
   "invalid_expired_invitation_error": "Invalid or expired invitation link.",
   "name_email_required_error": "Please enter your name and email to join.",
   "accept_generic_failed_error": "Failed to accept invitation.",
-  "generic_invitation_accepted_alert": "Success! You have joined the event.\n\nYour UUID is: \n{{uuid}}\n\nIMPORTANT: Please save this UUID as it can only be accessed once. It will be needed to comment on the event.",
   "accept_generic_invitation_page_title": "Accept Invitation",
-
 
   "accept_personalized_invitation_title": "Accept Personalized Invitation",
   "personalized_invitation_not_found_error": "Could not find invitation details.",
@@ -100,10 +98,12 @@
   "cannot_accept_details_not_loaded_error": "Cannot accept invitation: Details not loaded.",
   "your_email_required_error": "Please enter your email to join.",
   "accept_personalized_failed_error": "Failed to accept invitation. It might be invalid or already used.",
-  "personalized_invitation_accepted_alert": "Success! You have joined the event as \"{{name}}\".\n\nYour UUID is: \n{{uuid}}\n\nIMPORTANT: Please save this UUID as it can only be accessed once. It will be needed to comment on the event.",
   "unnamed_participant": "Unnamed Participant",
   "invitation_for": "Invitation for: ",
   "invalid_or_used_personalized_invitation_error": "Invalid or used personalized invitation link.",
-  "accept_personalized_invitation_page_title": "Accept Personalized Invitation"
+  "accept_personalized_invitation_page_title": "Accept Personalized Invitation",
+
+  "invitation_save_url_message": "IMPORTANT: Please save this URL as it can only be accessed once. It will be needed to comment on the event.",
+  "invitation_joined_event_message": "Success! You have joined the event."
 
 }

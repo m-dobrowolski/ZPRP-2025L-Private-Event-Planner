@@ -39,7 +39,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
 
             } catch (err) {
                 console.error("Failed to fetch event context for generic invitation:", err);
-                const errorMessage = err.message || t('load_event_details_failed_error');
+                const errorMessage = t('load_event_details_failed_error');
                 setErrorDetails(errorMessage);
             } finally {
                 setLoadingDetails(false);
@@ -116,7 +116,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
             {error && <div className={styles.error}>{error}</div>}
             {success && (
                 <div className={styles.success}>
-                    <h2>Success! You have joined the event.</h2>
+                    <h2> {t('invitation_joined_event_message')} </h2>
                     <p>
                         Your URL: <br />
                         <div className={styles.link}>
@@ -125,7 +125,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
                             </Link>
                         </div>
                     </p>
-                    <p className={styles.important}>IMPORTANT: Please save this URL as it can only be accessed once. It will be needed to comment on the event.</p>
+                    <p className={styles.important}> {t('invitation_save_url_message')} </p>
                 </div>
             )}
 
