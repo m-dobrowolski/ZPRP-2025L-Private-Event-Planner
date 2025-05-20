@@ -6,12 +6,19 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from events.factories import (
+    CommentFactory,
     EventFactory,
     InvitationFactory,
     ParticipantFactory,
     PersonalizedInvitationFactory,
 )
-from events.models import Event, Invitation, Participant, PersonalizedInvitation
+from events.models import (
+    Comment,
+    Event,
+    Invitation,
+    Participant,
+    PersonalizedInvitation,
+)
 
 
 class EventCreateTests(APITestCase):
@@ -153,6 +160,23 @@ class EventDetailsTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+class InvitationDetailTests(APITestCase):
+    def setUp(self):
+        self.event = EventFactory()
+        self.inv = InvitationFactory(event=self.event)
+
+    def test_correct_inv_uuid(self):
+        url = reverse('events:invitation-detail',
+                      args=[self.inv.uuid])
+        response = self.client.get(url)
+        inv_data = response.data
+        self.assertEqual(inv_data['event_name'], self.event.name)
+        self.assertEqual(str(inv_data['event_uuid']), str(self.event.uuid))
+
+    def test_invalid_inv_uuid(self):
+        url = reverse('events:invitation-detail', args=[uuid4()])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 class InvitationCreateTests(APITestCase):
     def setUp(self):
@@ -250,6 +274,27 @@ class InvitationDeleteTests(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+
+class PersonalizedInvitationDetailTests(APITestCase):
+    def setUp(self):
+        self.event = EventFactory()
+        self.pers_inv = PersonalizedInvitationFactory(event=self.event)
+
+    def test_correct_inv_uuid(self):
+        url = reverse('events:personalized-invitation-detail',
+                      args=[self.pers_inv.uuid])
+        response = self.client.get(url)
+        inv_data = response.data
+        self.assertEqual(str(inv_data['uuid']), str(self.pers_inv.uuid))
+        self.assertEqual(inv_data['name'], self.pers_inv.name)
+        self.assertEqual(inv_data['event_name'], self.event.name)
+        self.assertEqual(str(inv_data['event_uuid']), str(self.event.uuid))
+
+    def test_invalid_inv_uuid(self):
+        url = reverse('events:personalized-invitation-detail',
+                args=[uuid4()])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 class PersonalizedInvitationCreateTests(APITestCase):
     def setUp(self):
@@ -398,3 +443,65 @@ class DeleteParticipantAsAdminTest(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+
+class CommentViewSetTests(APITestCase):
+
+    def setUp(self):
+        self.event = EventFactory()
+        self.comment_author_uuid = uuid4()
+        self.comment = CommentFactory(event=self.event, parent=None,
+                                      author__uuid=self.comment_author_uuid)
+        self.comment_uuid = str(self.comment.uuid)
+        self.event_uuid = str(self.event.uuid)
+        self.event_edit_uuid = str(self.event.edit_uuid)
+
+    def test_list_by_event_returns_comments(self):
+        url = reverse('events:comment-list-by-event',
+                      kwargs={'event_uuid': self.event_uuid})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        comment_data = response.data[0]
+        self.assertEqual(self.comment.content, comment_data['content'])
+
+    def test_list_by_event_invalid_event_uuid(self):
+        url = reverse('events:comment-list-by-event',
+                      kwargs={'event_uuid': str(uuid4())})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_remove_comment_with_valid_event_edit_uuid(self):
+        url = reverse('events:comment-remove', kwargs={
+            'comment_uuid': self.comment_uuid,
+            'participant_or_event_edit_uuid': self.event_edit_uuid,
+        })
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Comment.objects.filter(uuid=self.comment_uuid).exists())
+
+    def test_remove_comment_with_valid_author_uuid(self):
+        url = reverse('events:comment-remove', kwargs={
+            'comment_uuid': self.comment_uuid,
+            'participant_or_event_edit_uuid': str(self.comment_author_uuid),
+        })
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Comment.objects.filter(uuid=self.comment_uuid).exists())
+
+    def test_remove_comment_invalid_comment_uid_returns_404(self):
+        url = reverse('events:comment-remove', kwargs={
+            'comment_uuid': str(uuid4()),
+            'participant_or_event_edit_uuid': self.event_edit_uuid,
+        })
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_remove_comment_invalid_participant_or_edit_uuid_raises_404(self):
+        invalid_uuid = str(uuid4())
+        url = reverse('events:comment-remove', kwargs={
+            'comment_uuid': self.comment_uuid,
+            'participant_or_event_edit_uuid': invalid_uuid,
+        })
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
