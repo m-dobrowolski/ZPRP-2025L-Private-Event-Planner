@@ -11,7 +11,6 @@ services:
       - ./nginx:/etc/nginx/templates
       - media:/backend/media
       - static:/backend/static
-      - .logs:/var/log/nginx
     depends_on:
       - backend
       - frontend
@@ -49,7 +48,7 @@ services:
       sh -c "./wait-for-it.sh db:5432 --
       && python manage.py collectstatic --no-input
       && python manage.py migrate
-      && gunicorn private_event_planner.wsgi:application --bind 0.0.0.0:8000"
+      && gunicorn private_event_planner.wsgi:application --bind 0.0.0.0:8000 --access-logfile /var/log/gunicorn/access.log --error-logfile /var/log/gunicorn/error.log"
     build:
       context: ./backend
     ports:
@@ -78,6 +77,8 @@ services:
     volumes:
       - media:/app/media
       - static:/app/static
+      - gunicorn_logs:/var/log/gunicorn
+      - django_logs:/var/log/django
 
   worker:
     build:
@@ -86,6 +87,8 @@ services:
       sh -c "./wait-for-it.sh db:5432 --
       && ./wait-for-it.sh rabbitmq:5672 --
       && python manage.py rundramatiq"
+    volumes:
+      - django_logs:/var/log/django
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
@@ -114,6 +117,8 @@ services:
       sh -c "./wait-for-it.sh db:5432 --
       && ./wait-for-it.sh rabbitmq:5672 --
       && python manage.py rundramatiq"
+    volumes:
+      - django_logs:/var/log/django
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
@@ -141,6 +146,8 @@ services:
       sh -c "./wait-for-it.sh db:5432 --
       && ./wait-for-it.sh rabbitmq:5672 --
       && python manage.py test"
+    volumes:
+      - django_logs:/var/log/django
     build:
       context: ./backend
     ports:
@@ -172,3 +179,5 @@ volumes:
   postgres_data:
   media:
   static:
+  gunicorn_logs:
+  django_logs:

@@ -42,6 +42,7 @@ class EventAdminViewSet(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         event = serializer.save()
+        logger.info("New event created: %s", str(event))
         try:
             send_event_admin_link_task.send(
                 creator_email=event.organizer_email,
@@ -94,6 +95,7 @@ class EventAdminViewSet(mixins.CreateModelMixin,
         participants = list(instance.participants.all())
         name = instance.name
         instance.delete()
+        logger.info("Event deleted: %s", str(instance))
         try:
             for participant in participants:
                 send_event_cancellation_notification_task.send(
