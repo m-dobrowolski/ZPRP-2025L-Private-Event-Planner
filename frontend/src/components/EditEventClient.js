@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     getEventAdminDetails,
@@ -22,6 +22,8 @@ import { useTranslation } from 'react-i18next';
 export default function EditEventClient({ uuid, edit_uuid }) {
     const router = useRouter();
     const { t } = useTranslation('translation');
+    const params = useParams();
+    const currentLocale = params.locale;
 
     const [formData, setFormData] = useState({
         name: '',
@@ -304,7 +306,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
             console.log('Personalized invitation created:', response);
 
             if (response && response.uuid) {
-                 const invitationLink = `${window.location.origin}/personalized-invitation/accept/${response.uuid}`;
+                 const invitationLink = `${window.location.origin}/${currentLocale}/personalized-invitation/accept/${response.uuid}`;
                  setCreatedPersonalizedLink(invitationLink);
                  setPersonalizedInvitations(prev => [...prev, response]);
                  setAddPersonalizedFormData({ name: '' });
@@ -359,7 +361,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
     };
 
     const currentUniversalLink = universalInvitations.length > 0 ?
-        `${window.location.origin}/invitation/accept/${universalInvitations[0].uuid}` : null;
+        `${window.location.origin}/${currentLocale}/invitation/accept/${universalInvitations[0].uuid}` : null;
 
 
     const isMainActionLoading = loadingSave || loadingDeleteEvent || deletingParticipantId !== null || deletingUniversalInvitationUuid !== null || deletingPersonalizedInvitationUuid !== null;
@@ -639,13 +641,13 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                         {universalInvitations.map(invitation => (
                             <li key={invitation.uuid} className={styles.invitationItem}>
                                 <span>
-                                    {t('link_label')}: <Link href={`/invitation/accept/${invitation.uuid}`} target="_blank" rel="noopener noreferrer">
+                                    {t('link_label')}: <Link href={`/${currentLocale}/invitation/accept/${invitation.uuid}`} >
                                         {`${window.location.origin}/invitation/accept/${invitation.uuid}`}
                                     </Link>
                                 </span>
                                 <button
                                     className={styles.copyLinkButton}
-                                    onClick={() => copyToClipboard(`${window.location.origin}/invitation/accept/${invitation.uuid}`, 'universal_link_copied_alert')}
+                                    onClick={() => copyToClipboard(`${window.location.origin}/${currentLocale}/invitation/accept/${invitation.uuid}`, 'universal_link_copied_alert')}
                                 >
                                     {t('copy_link_button')}
                                 </button>
@@ -674,7 +676,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                                 </span>
                                 <button
                                     className={styles.copyLinkButton}
-                                    onClick={() => copyToClipboard(`${window.location.origin}/personalized-invitation/accept/${invitation.uuid}`, 'personalized_link_copied_alert', { name: invitation.name })}
+                                    onClick={() => copyToClipboard(`${window.location.origin}/${currentLocale}/personalized-invitation/accept/${invitation.uuid}`, 'personalized_link_copied_alert', { name: invitation.name })}
                                     disabled={deletingPersonalizedInvitationUuid === invitation.uuid || isMainActionLoading || isAddModalLoading}
                                 >
                                     {t('copy_link_button')}

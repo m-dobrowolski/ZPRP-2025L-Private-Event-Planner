@@ -1,5 +1,6 @@
 {
   "app_description": "Private Event Planner is an application designed for organizing private events intuitively. It allows users to create and manage events in an easy way. Events can be accessed only by direct link, generated on event creation. This provides a secure way of sharing events with others. In order to create event user must provide basic information about event and his email address. Email address is used to send editing link to user. Application also allows to export events to ICS format and to add them on google calendar.",
+  "home_page_title": "Private Event Planner",
 
   "create_event_success_title": "Event created successfully!",
   "create_event_success_message": "Here are the links to access and manage the event. Keep managing link private, it cannot be changed. Links will be sent to your email address shortly.",

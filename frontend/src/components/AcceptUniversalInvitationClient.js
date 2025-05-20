@@ -5,8 +5,12 @@ import { acceptUniversalInvitation, getUniversalInvitationDetails } from '@/api/
 import styles from '@/styles/acceptInvitation.module.css';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link'
+import { useParams } from "next/navigation";
 
 export default function AcceptUniversalInvitationClient({ invitationUuid }) {
+    const params = useParams();
+    const currentLocale = params.locale;
+
     const { t } = useTranslation('translation');
 
     const [formData, setFormData] = useState({ name: '', email: '' });
@@ -120,7 +124,7 @@ export default function AcceptUniversalInvitationClient({ invitationUuid }) {
                     <p>
                         Your URL: <br />
                         <div className={styles.link}>
-                            <Link href={`/event/${success.event}?author_uuid=${success.uuid}`}>
+                            <Link href={`/${currentLocale}/event/${success.event}?author_uuid=${success.uuid}`}>
                                 http://localhost:3000/api/event/{success.event}?author_uuid={success.uuid}
                             </Link>
                         </div>

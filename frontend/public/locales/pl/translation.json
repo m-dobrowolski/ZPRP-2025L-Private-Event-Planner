@@ -1,5 +1,6 @@
 {
   "app_description": "Private Event Planner to aplikacja przeznaczona do intuicyjnej organizacji prywatnych wydarzeń. Umożliwia użytkownikom łatwe tworzenie i zarządzanie wydarzeniami. Dostęp do wydarzeń jest możliwy tylko za pomocą bezpośredniego linku, generowanego podczas tworzenia wydarzenia. Zapewnia to bezpieczny sposób udostępniania wydarzeń innym osobom. Aby utworzyć wydarzenie, użytkownik musi podać podstawowe informacje o wydarzeniu i swój adres e-mail. Adres e-mail jest używany do wysyłania użytkownikowi linku do edycji. Aplikacja umożliwia również eksportowanie wydarzeń do formatu ICS i dodawanie ich do kalendarza Google.",
+  "home_page_title": "Private Event Planner",
 
   "create_event_success_title": "Wydarzenie utworzone pomyślnie!",
   "create_event_success_message": "Poniżej znajdują się linki do dostępu i zarządzania wydarzeniem. Link do zarządzania wydarzeniem zachowaj w tajemnicy, nie można go zmienić. Linki zostaną wysłane na Twój adres e-mail wkrótce.",
