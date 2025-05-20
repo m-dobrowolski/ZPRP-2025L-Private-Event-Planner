@@ -13,9 +13,9 @@ def _get_url(kwargs=None) -> str:
     edit_uuid = kwargs.pop('edit_uuid', None)
     if uuid:
         if edit_uuid:
-            return f'http://localhost:3000/event/{uuid}/{edit_uuid}'
-        return f'http://localhost:3000/event/{uuid}'
-    return "http://localhost:3000/"
+            return f'http://localhost/event/{uuid}/{edit_uuid}'
+        return f'http://localhost/event/{uuid}'
+    return "http://localhost/"
 
 @dramatiq.actor(max_retries=3)
 def send_event_invite_email_task(to_email, name, surname, event_details):
