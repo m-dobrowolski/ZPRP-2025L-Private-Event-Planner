@@ -1,28 +1,32 @@
+import datetime
 import logging
-from datetime import date, datetime
 
-from django.shortcuts import render
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, mixins
-from rest_framework.views import APIView
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.http import Http404, HttpResponse
-from .serializers import EventSerializer, InvitationCreateSerializer, PersInvCreateSerializer,\
-                         InvitationAcceptSerializer, PersInvAcceptSerializer,\
-                         InvitationDetailsSerializer, PersInvDetailsSerializer,\
-                         EventAdminSerializer, EventSerializer, CommentSerializer
-from .models import Event, Invitation, PersonalizedInvitation, Participant, \
-                            Comment
-from .utils import event_to_ics
-from django.http import HttpResponse
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
-from .tasks import (
-    send_event_invite_email_task,
-    send_event_admin_link_task,
-    send_event_update_notification_task,
-    send_event_cancellation_notification_task
+
+from .models import Comment, Event, Invitation, Participant, PersonalizedInvitation
+from .serializers import (
+    CommentSerializer,
+    EventAdminSerializer,
+    EventSerializer,
+    InvitationAcceptSerializer,
+    InvitationCreateSerializer,
+    InvitationDetailsSerializer,
+    PersInvAcceptSerializer,
+    PersInvCreateSerializer,
+    PersInvDetailsSerializer,
 )
+from .tasks import (
+    send_event_admin_link_task,
+    send_event_cancellation_notification_task,
+    send_event_invite_email_task,
+    send_event_update_notification_task,
+)
+from .utils import event_to_ics
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +48,13 @@ class EventAdminViewSet(mixins.CreateModelMixin,
                 creator_name=event.organizer_name,
                 event_name=event.name,
                 event_uuid=str(event.uuid),
-                event_edit_uuid=str(event.edit_uuid)
+                event_edit_uuid=str(event.edit_uuid),
             )
-        except Exception as e:
-            logger.error(f"Failed to enqueue admin link task for event {event.uuid}: {e}")
+        except Exception:
+            logger.exception(
+                "Failed to enqueue admin link task for event %s",
+                event.uuid,
+            )
 
     def update(self, request, *args, **kwargs):
         edit_uuid = kwargs.get('edit_uuid')
@@ -59,16 +66,21 @@ class EventAdminViewSet(mixins.CreateModelMixin,
 
     def perform_update(self, serializer):
         updated = serializer.save()
-        for participant in updated.participants.all():
-            try:
+        participants = list(updated.participants.all())
+        try:
+            for participant in participants:
                 send_event_update_notification_task.send(
                     participant_email=participant.email,
                     participant_name=participant.name,
                     event_name=updated.name,
-                    event_uuid=str(updated.uuid)
+                    event_uuid=str(updated.uuid),
                 )
-            except Exception as e:
-                logger.error(f"Failed to enqueue update task for participant {participant.email} event {updated.uuid}: {e}")
+        except Exception:
+            logger.exception(
+                "Failed to enqueue update task for participant %s event %s",
+                participant.email,
+                updated.uuid,
+            )
 
     def destroy(self, request, *args, **kwargs):
         edit_uuid = kwargs.get('edit_uuid')
@@ -82,15 +94,19 @@ class EventAdminViewSet(mixins.CreateModelMixin,
         participants = list(instance.participants.all())
         name = instance.name
         instance.delete()
-        for participant in participants:
-            try:
+        try:
+            for participant in participants:
                 send_event_cancellation_notification_task.send(
                     participant_email=participant.email,
                     participant_name=participant.name,
-                    event_name=name
+                    event_name=name,
                 )
-            except Exception as e:
-                logger.error(f"Failed to enqueue cancellation task for participant {participant.email} event {instance.uuid}: {e}")
+        except Exception:
+            logger.exception(
+                "Failed to enqueue cancellation task for participant %s event %s",
+                participant.email,
+                instance.uuid,
+            )
 
     def retrieve(self, request, *args, **kwargs):
         edit_uuid = kwargs.get('edit_uuid')
@@ -100,7 +116,7 @@ class EventAdminViewSet(mixins.CreateModelMixin,
         return super().retrieve(request, *args, **kwargs)
 
     @action(methods=['delete'], detail=False)
-    def remove_participant(self, request, id, edit_uuid, format=None):
+    def remove_participant(self, request, id, edit_uuid, format=None):  # noqa: A002, ARG002
         participant = get_object_or_404(Participant, id=id)
         if str(participant.event.edit_uuid) != str(edit_uuid):
             raise Http404
@@ -122,8 +138,9 @@ class InvitationViewSet(mixins.CreateModelMixin,
             return InvitationDetailsSerializer
         return InvitationCreateSerializer
 
-    @action(methods=['DELETE'], detail=False, url_path='remove/(?P<uuid>[^/.]+)/(?P<edit_uuid>[^/.]+)')
-    def remove(self, request, uuid, edit_uuid):
+    @action(methods=['DELETE'], detail=False,
+            url_path='remove/(?P<uuid>[^/.]+)/(?P<edit_uuid>[^/.]+)')
+    def remove(self, request, uuid, edit_uuid):  # noqa: ARG002
         invitation = get_object_or_404(Invitation, uuid=uuid)
         if str(invitation.event.edit_uuid) != str(edit_uuid):
             raise Http404
@@ -131,7 +148,7 @@ class InvitationViewSet(mixins.CreateModelMixin,
         return Response(status=204)
 
     @action(methods=['POST'], detail=False)
-    def accept(self, request, format=None):
+    def accept(self, request, format=None):  # noqa: A002, ARG002
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -153,8 +170,9 @@ class PersonalizedInvitationViewSet(mixins.CreateModelMixin,
             return PersInvDetailsSerializer
         return PersInvCreateSerializer
 
-    @action(methods=['DELETE'], detail=False, url_path='remove/(?P<uuid>[^/.]+)/(?P<edit_uuid>[^/.]+)')
-    def remove(self, request, uuid, edit_uuid):
+    @action(methods=['DELETE'], detail=False,
+            url_path='remove/(?P<uuid>[^/.]+)/(?P<edit_uuid>[^/.]+)')
+    def remove(self, request, uuid, edit_uuid):  # noqa: ARG002
         invitation = get_object_or_404(PersonalizedInvitation, uuid=uuid)
         if str(invitation.event.edit_uuid) != str(edit_uuid):
             raise Http404
@@ -162,7 +180,7 @@ class PersonalizedInvitationViewSet(mixins.CreateModelMixin,
         return Response(status=204)
 
     @action(methods=['POST'], detail=False)
-    def accept(self, request, format=None):
+    def accept(self, request, format=None):  # noqa: A002, ARG002
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -186,19 +204,19 @@ class EventViewSet(mixins.RetrieveModelMixin,
                 description='UUID of the event',
                 required=True,
                 type=str,
-                location=OpenApiParameter.PATH
-            )
+                location=OpenApiParameter.PATH,
+            ),
         ],
         responses={
             200: OpenApiResponse(
                 response=None,
-                description='ICS calendar file for the event'
+                description='ICS calendar file for the event',
             ),
             404: OpenApiResponse(description='Event not found'),
         },
     )
     @action(methods=['GET'], detail=False, url_path='ics/(?P<uuid>[^/.]+)')
-    def convert_to_ics(self, request, uuid, format=None):
+    def convert_to_ics(self, request, uuid, format=None):  # noqa: A002, ARG002
         event = self.get_object()
         ics_content = event_to_ics(event)
         response = HttpResponse(ics_content, content_type='text/calendar')
@@ -206,7 +224,7 @@ class EventViewSet(mixins.RetrieveModelMixin,
         return response
 
     @action(methods=['DELETE'], detail=False, url_path='leave/(?P<uuid>[^/.]+)')
-    def leave(self, request, uuid, format=None):
+    def leave(self, request, uuid, format=None):  # noqa: A002, ARG002
         participant = get_object_or_404(Participant, uuid=uuid)
         participant.delete()
         return Response(status=204)
@@ -219,7 +237,7 @@ class CommentViewSet(mixins.CreateModelMixin,
     serializer_class = CommentSerializer
 
     @action(methods=['GET'], detail=False, url_path='(?P<event_uuid>[^/.]+)')
-    def list_by_event(self, request, event_uuid, format=None):
+    def list_by_event(self, request, event_uuid, format=None):  # noqa: A002, ARG002
         event = get_object_or_404(Event, uuid=event_uuid)
         comments = event.comments.filter(parent__isnull=True)
         serializer = self.get_serializer(comments, many=True)
@@ -227,7 +245,7 @@ class CommentViewSet(mixins.CreateModelMixin,
 
     @action(methods=['DELETE'], detail=False,
             url_path='remove/(?P<comment_uuid>[^/.]+)/(?P<participant_or_event_edit_uuid>[^/.]+)')
-    def remove(self, request, comment_uuid, participant_or_event_edit_uuid):
+    def remove(self, request, comment_uuid, participant_or_event_edit_uuid):  # noqa: ARG002
         comment = get_object_or_404(Comment, uuid=comment_uuid)
         if str(comment.event.edit_uuid) != str(participant_or_event_edit_uuid) \
             and str(comment.author.uuid) != str(participant_or_event_edit_uuid):
@@ -236,17 +254,17 @@ class CommentViewSet(mixins.CreateModelMixin,
         return Response(status=204)
 
 
-def test_email_view(request):
+def test_email_view(request):  # noqa: ARG001
     recipient_email = '' # enter test email here
     name = "John"
     surname = "Doe"
     event_details = {
         'name': "Dni pomidora w Szczebodzicach",
-        'date': date.today(),
-        'event_link': "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        'date': datetime.datetime.now(tz=datetime.timezone.utc).date(),
+        'event_link': "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     }
     try:
         send_event_invite_email_task(recipient_email, name, surname, event_details)
         return HttpResponse("Invite email sent successfully!")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return HttpResponse(f"Error sending email: {e}") # For debugging purposes
