@@ -144,7 +144,7 @@
      margin-bottom: 20px;
 }
 
-.genericLinkBox {
+.universalLinkBox {
      background-color: #2b2b2b;
      border: 1px dashed #ccc;
      padding: 15px;
@@ -153,28 +153,28 @@
      word-break: break-all;
 }
 
-.genericLinkBox strong {
+.universalLinkBox strong {
     display: block;
     margin-bottom: 8px;
     color: #9d9d9d;
 }
 
-.genericLinkBox p {
+.universalLinkBox p {
      margin: 0 0 8px 0;
      font-size: 1rem;
      font-family: monospace;
 }
 
-.genericLinkBox a {
+.universalLinkBox a {
      color: #007bff;
      text-decoration: none;
 }
 
-.genericLinkBox a:hover {
+.universalLinkBox a:hover {
      text-decoration: underline;
 }
 
-.genericLinkBox small {
+.universalLinkBox small {
      display: block;
      margin-top: 5px;
      color: #777;
@@ -183,7 +183,7 @@
 
 .createLinkButton {
      display: inline-block;
-     padding: 10px 20px;
+     padding: 8px 15px;
      font-size: 1rem;
      color: #fff;
      background-color: #17a2b8;
@@ -192,6 +192,7 @@
      cursor: pointer;
      transition: background-color 0.3s ease;
      margin-top: 10px;
+     margin-left: 20px;
 }
 
 .createLinkButton:hover:not(:disabled) {
@@ -205,7 +206,7 @@
 
 .copyLinkButton {
     padding: 8px 15px;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: #fff;
     background-color: #6c757d;
     border: none;

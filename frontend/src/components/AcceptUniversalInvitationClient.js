@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { acceptGenericInvitation, getGenericInvitationDetails } from '@/api/api';
+import { acceptUniversalInvitation, getUniversalInvitationDetails } from '@/api/api';
 import styles from '@/styles/acceptInvitation.module.css';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link'
+import { useParams } from "next/navigation";
 
-export default function AcceptGenericInvitationClient({ invitationUuid }) {
+export default function AcceptUniversalInvitationClient({ invitationUuid }) {
+    const params = useParams();
+    const currentLocale = params.locale;
+
     const { t } = useTranslation('translation');
 
     const [formData, setFormData] = useState({ name: '', email: '' });
@@ -28,7 +32,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
             setLoadingDetails(true);
             setErrorDetails(null);
             try {
-                const data = await getGenericInvitationDetails(invitationUuid);
+                const data = await getUniversalInvitationDetails(invitationUuid);
 
                 if (data && data.event_name && data.event_uuid) {
                     setEventDetails({ name: data.event_name, uuid: data.event_uuid });
@@ -38,8 +42,8 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
                 }
 
             } catch (err) {
-                console.error("Failed to fetch event context for generic invitation:", err);
-                const errorMessage = err.message || t('load_event_details_failed_error');
+                console.error("Failed to fetch event context for universal invitation:", err);
+                const errorMessage = t('load_event_details_failed_error');
                 setErrorDetails(errorMessage);
             } finally {
                 setLoadingDetails(false);
@@ -74,7 +78,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
         }
 
         try {
-            const response = await acceptGenericInvitation(invitationUuid, formData.name.trim(), formData.email.trim());
+            const response = await acceptUniversalInvitation(invitationUuid, formData.name.trim(), formData.email.trim());
 
             console.log('Invitation accepted, participant created:', response);
             setSuccess({
@@ -84,7 +88,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
 
         } catch (err) {
             console.error('Error accepting invitation:', err);
-            const errorMessage = err.response?.data?.detail || err.message || t('accept_generic_failed_error');
+            const errorMessage = t('accept_universal_failed_error');
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -105,7 +109,7 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>{t('accept_generic_invitation_title')}</h1>
+            <h1 className={styles.title}>{t('accept_universal_invitation_title')}</h1>
 
             {eventDetails && (
                 <div className={styles.eventContext}>
@@ -116,16 +120,16 @@ export default function AcceptGenericInvitationClient({ invitationUuid }) {
             {error && <div className={styles.error}>{error}</div>}
             {success && (
                 <div className={styles.success}>
-                    <h2>Success! You have joined the event.</h2>
+                    <h2> {t('invitation_joined_event_message')} </h2>
                     <p>
                         Your URL: <br />
                         <div className={styles.link}>
-                            <Link href={`/event/${success.event}?author_uuid=${success.uuid}`}>
+                            <Link href={`/${currentLocale}/event/${success.event}?author_uuid=${success.uuid}`}>
                                 http://localhost:3000/api/event/{success.event}?author_uuid={success.uuid}
                             </Link>
                         </div>
                     </p>
-                    <p className={styles.important}>IMPORTANT: Please save this URL as it can only be accessed once. It will be needed to comment on the event.</p>
+                    <p className={styles.important}> {t('invitation_save_url_message')} </p>
                 </div>
             )}
 

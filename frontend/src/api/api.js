@@ -112,7 +112,7 @@ export async function deleteParticipantAsAdmin(participantId, editUuid) {
     return fetchData(`participant/${participantId}/${editUuid}/`, {method: 'DELETE'});
 }
 
-export async function createGenericInvitation(eventUuid, editUuid) {
+export async function createUniversalInvitation(eventUuid, editUuid) {
     const body = {
         event: eventUuid,
         event_edit_uuid: editUuid
@@ -120,11 +120,11 @@ export async function createGenericInvitation(eventUuid, editUuid) {
     return sendData('invitation/create/', 'POST', body);
 }
 
-export async function deleteGenericInvitation(invitationUuid, editUuid) {
+export async function deleteUniversalInvitation(invitationUuid, editUuid) {
     return fetchData(`invitation/delete/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
 }
 
-export async function acceptGenericInvitation(invitationUuid, name, email) {
+export async function acceptUniversalInvitation(invitationUuid, name, email) {
     const body = {
         invitation: invitationUuid,
         name: name,
@@ -133,7 +133,7 @@ export async function acceptGenericInvitation(invitationUuid, name, email) {
     return sendData('invitation/accept/', 'POST', body)
 }
 
-export async function getGenericInvitationDetails(invitationUuid) {
+export async function getUniversalInvitationDetails(invitationUuid) {
      return fetchData(`invitation/details/${invitationUuid}/`);
 }
 

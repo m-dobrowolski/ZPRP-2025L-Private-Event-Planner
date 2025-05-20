@@ -12,12 +12,15 @@ function getLocale(request) {
     const acceptedLanguage = request.headers.get('Accept-Language') ?? undefined
     const headers = { 'accept-language': acceptedLanguage }
 
+    console.log('[Middleware] Get headers:', headers);
+
     const languages = new Negotiator({ headers }).languages()
     return match(languages, locales, defaultLocale)
 }
 
 
 export function middleware(request) {
+    console.log('[Middleware] Incoming Pathname:', request.nextUrl.pathname);
     const { pathname } = request.nextUrl
 
     if (
@@ -40,8 +43,12 @@ export function middleware(request) {
         (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
     )
 
+    console.log('[Middleware] Pathname has locale?', pathnameHasLocale);
+
     if (!pathnameHasLocale) {
         const locale = getLocale(request)
+
+        console.log(`[Middleware] No locale in pathname: ${locale}`);
 
         if (pathname === '/') {
             request.nextUrl.pathname = `/${locale}/`;
@@ -49,6 +56,7 @@ export function middleware(request) {
         }
 
         request.nextUrl.pathname = `/${locale}${pathname}`;
+        console.log(`[Middleware] New pathname: ${request.nextUrl.pathname}`);
         return NextResponse.redirect(request.nextUrl);
     }
 
