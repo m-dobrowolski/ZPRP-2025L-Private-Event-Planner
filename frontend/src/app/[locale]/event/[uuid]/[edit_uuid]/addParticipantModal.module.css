@@ -183,7 +183,7 @@
 
 .createLinkButton {
      display: inline-block;
-     padding: 10px 20px;
+     padding: 8px 15px;
      font-size: 1rem;
      color: #fff;
      background-color: #17a2b8;
@@ -192,6 +192,7 @@
      cursor: pointer;
      transition: background-color 0.3s ease;
      margin-top: 10px;
+     margin-left: 20px;
 }
 
 .createLinkButton:hover:not(:disabled) {
@@ -205,7 +206,7 @@
 
 .copyLinkButton {
     padding: 8px 15px;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: #fff;
     background-color: #6c757d;
     border: none;
