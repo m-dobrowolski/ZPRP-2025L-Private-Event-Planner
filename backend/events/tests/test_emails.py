@@ -1,7 +1,9 @@
-from django.test import TestCase
 from django.core import mail
 from django.template.loader import render_to_string
+from django.test import TestCase
+
 from events.emails import send_event_invite_email_sync
+
 
 class UserProfileTaskTest(TestCase):
     def test_send_email(self):
@@ -13,16 +15,14 @@ class UserProfileTaskTest(TestCase):
             subject=subject,
             message=body,
             from_email=from_email,
-            recipient_list=recipient_list
+            recipient_list=recipient_list,
         )
         self.assertEqual(len(mail.outbox), 1)
 
 class EmailSendingTest(TestCase):
 
     def test_send_event_invite_email_sync(self):
-        """
-        Tests the synchronous email sending function.
-        """
+        """Tests the synchronous email sending function."""
         mail.outbox = []
         test_email = "test@example.com"
         test_name = "Jane"
@@ -33,7 +33,8 @@ class EmailSendingTest(TestCase):
             'event_link': 'test12345',
         }
 
-        send_event_invite_email_sync(test_email, test_name, test_surname, test_event_details)
+        send_event_invite_email_sync(test_email, test_name, test_surname,
+                                     test_event_details)
 
         self.assertEqual(len(mail.outbox), 1)
         sent_email = mail.outbox[0]
@@ -54,5 +55,6 @@ class EmailSendingTest(TestCase):
             'event_link': test_event_details['event_link'],
         })
         self.assertEqual(sent_email.body.strip(), expected_text_content.strip())
-        self.assertEqual(sent_email.alternatives[0][0].strip(), expected_html_content.strip())
+        self.assertEqual(sent_email.alternatives[0][0].strip(),
+                         expected_html_content.strip())
         self.assertEqual(sent_email.alternatives[0][1], "text/html")

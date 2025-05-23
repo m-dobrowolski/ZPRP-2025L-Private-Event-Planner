@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000/api/";
+const API_BASE_URL = "http://localhost/api/";
 
 async function fetchData(url, options = {}) {
     try {
@@ -41,7 +41,7 @@ async function sendData(url, method, body) {
         method: method,
     };
 
-    if ((method === 'POST' || method === 'PATCH') && !(body instanceof FormData)) {
+    if ((method === 'POST' || method === 'PUT') && !(body instanceof FormData)) {
         options.body = JSON.stringify(body);
         options.headers = {
             'Content-Type': 'application/json'
@@ -89,7 +89,7 @@ async function sendData(url, method, body) {
 }
 
 export async function createEvent(formData) {
-    return sendData('event/create/', 'POST', formData);
+    return sendData('event-admin/', 'POST', formData);
 }
 
 export async function getEventDetails(uuid) {
@@ -97,19 +97,19 @@ export async function getEventDetails(uuid) {
 }
 
 export async function getEventAdminDetails(uuid, editUuid) {
-    return fetchData(`event/${uuid}/${editUuid}/`);
+    return fetchData(`event-admin/${uuid}/${editUuid}/`);
 }
 
 export async function updateEvent(uuid, editUuid, formData) {
-    return sendData(`event/${uuid}/${editUuid}/`, 'PATCH', formData);
+    return sendData(`event-admin/${uuid}/${editUuid}/`, 'PUT', formData);
 }
 
 export async function deleteEvent(uuid, editUuid) {
-    return fetchData(`event/${uuid}/${editUuid}/`, { method: 'DELETE' });
+    return fetchData(`event-admin/${uuid}/${editUuid}/`, { method: 'DELETE' });
 }
 
 export async function deleteParticipantAsAdmin(participantId, editUuid) {
-    return fetchData(`participant/${participantId}/${editUuid}/`, {method: 'DELETE'});
+    return fetchData(`event-admin/remove-participant/${participantId}/${editUuid}/`, {method: 'DELETE'});
 }
 
 export async function createGenericInvitation(eventUuid, editUuid) {
@@ -117,11 +117,11 @@ export async function createGenericInvitation(eventUuid, editUuid) {
         event: eventUuid,
         event_edit_uuid: editUuid
     };
-    return sendData('invitation/create/', 'POST', body);
+    return sendData('invitation/', 'POST', body);
 }
 
 export async function deleteGenericInvitation(invitationUuid, editUuid) {
-    return fetchData(`invitation/delete/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
+    return fetchData(`invitation/remove/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
 }
 
 export async function acceptGenericInvitation(invitationUuid, name, email) {
@@ -134,7 +134,7 @@ export async function acceptGenericInvitation(invitationUuid, name, email) {
 }
 
 export async function getGenericInvitationDetails(invitationUuid) {
-     return fetchData(`invitation/details/${invitationUuid}/`);
+     return fetchData(`invitation/${invitationUuid}/`);
 }
 
 export async function createPersonalizedInvitation(eventUuid, editUuid, name) {
@@ -143,11 +143,11 @@ export async function createPersonalizedInvitation(eventUuid, editUuid, name) {
         event_edit_uuid: editUuid,
         name: name,
     };
-    return sendData('personalized-invitation/create/', 'POST', body);
+    return sendData('personalized-invitation/', 'POST', body);
 }
 
 export async function deletePersonalizedInvitation(invitationUuid, editUuid) {
-    return fetchData(`personalized-invitation/delete/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
+    return fetchData(`personalized-invitation/remove/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
 }
 
 export async function acceptPersonalizedInvitation(invitationUuid, name, email) {
@@ -160,7 +160,7 @@ export async function acceptPersonalizedInvitation(invitationUuid, name, email) 
 }
 
 export async function getPersonalizedInvitationDetails(invitationUuid) {
-     return fetchData(`personalized-invitation/details/${invitationUuid}/`);
+     return fetchData(`personalized-invitation/${invitationUuid}/`);
 }
 
 export async function createComment(eventUuid, participantOrEventEditUuid, content) {
@@ -169,15 +169,15 @@ export async function createComment(eventUuid, participantOrEventEditUuid, conte
         author_uuid: participantOrEventEditUuid,
         content: content
     };
-    return sendData('comments/create/', 'POST', body);
+    return sendData('comment/', 'POST', body);
 }
 
 export async function getComments(eventUuid) {
-    return fetchData(`comments/${eventUuid}/`);
+    return fetchData(`comment/${eventUuid}/`);
 }
 
 export async function deleteComment(commentUuid, participantOrEventEditUuid) {
-    return fetchData(`comments/delete/${commentUuid}/${participantOrEventEditUuid}`, { method: 'DELETE' });
+    return fetchData(`comment/remove/${commentUuid}/${participantOrEventEditUuid}`, { method: 'DELETE' });
 }
 
 export async function getEventIcs(eventUuid) {

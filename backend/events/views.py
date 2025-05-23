@@ -1,257 +1,201 @@
+import datetime
 import logging
-from datetime import date, datetime
 
-from django.shortcuts import render
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from django.http import Http404, HttpResponse
-from .serializers import EventSerializer, InvitationSerializer, PersonalizedInvitationSerializer,\
-                         AcceptInvitationSerializer, AcceptPersonalizedInvitationSerializer,\
-                         InvitationDetailsSerializer, PersonalizedInvitationDetailsSerializer,\
-                         EventAdminSerializer, EventSerializer, CommentSerializer
-from .models import Event, Invitation, PersonalizedInvitation, Participant, \
-                            Comment
-from .utils import event_to_ics
-from django.http import HttpResponse
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
-from .tasks import (
-    send_event_invite_email_task,
-    send_event_admin_link_task,
-    send_event_update_notification_task,
-    send_event_cancellation_notification_task
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import mixins, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from .models import Comment, Event, Invitation, Participant, PersonalizedInvitation
+from .serializers import (
+    CommentSerializer,
+    EventAdminSerializer,
+    EventSerializer,
+    InvitationAcceptSerializer,
+    InvitationCreateSerializer,
+    InvitationDetailsSerializer,
+    PersInvAcceptSerializer,
+    PersInvCreateSerializer,
+    PersInvDetailsSerializer,
 )
+from .tasks import (
+    send_event_admin_link_task,
+    send_event_cancellation_notification_task,
+    send_event_invite_email_task,
+    send_event_update_notification_task,
+)
+from .utils import event_to_ics
 
 logger = logging.getLogger(__name__)
 
-class EventCreate(APIView):
+
+class EventAdminViewSet(mixins.CreateModelMixin,
+                        mixins.UpdateModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.DestroyModelMixin,
+                        viewsets.GenericViewSet):
+    queryset = Event.objects.all()
     serializer_class = EventAdminSerializer
+    lookup_field = 'uuid'
 
-    def post(self, request, format=None):
-        serializer = EventAdminSerializer(data=request.data)
-        if serializer.is_valid():
-            event = serializer.save()
-
-            try:
-                send_event_admin_link_task.send(
-                    creator_email=event.organizer_email,
-                    creator_name=event.organizer_name,
-                    event_name=event.name,
-                    event_uuid=str(event.uuid),
-                    event_edit_uuid=str(event.edit_uuid)
-                )
-            except Exception as e:
-                logger.error(f"Failed to enqueue admin link task for event {event.uuid}: {e}")
-                pass
-
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-class EventAdminDetail(APIView):
-    serializer_class = EventAdminSerializer
-
-    def get_object(self, uuid, edit_uuid):
+    def perform_create(self, serializer):
+        event = serializer.save()
+        logger.info("New event created: %s", str(event))
         try:
-            event = Event.objects.get(uuid=uuid)
-            if str(event.edit_uuid) != str(edit_uuid):
-                raise Http404
-            return event
-        except Event.DoesNotExist:
-            raise Http404
+            send_event_admin_link_task.send(
+                creator_email=event.organizer_email,
+                creator_name=event.organizer_name,
+                event_name=event.name,
+                event_uuid=str(event.uuid),
+                event_edit_uuid=str(event.edit_uuid),
+            )
+        except Exception:
+            logger.exception(
+                "Failed to enqueue admin link task for event %s",
+                event.uuid,
+            )
 
-    def get(self, request, uuid, edit_uuid, format=None):
-        event = self.get_object(uuid, edit_uuid)
-        serializer = EventAdminSerializer(event)
-        return Response(serializer.data, status=200)
+    def update(self, request, *args, **kwargs):
+        edit_uuid = kwargs.get('edit_uuid')
+        instance = self.get_object()
+        if not edit_uuid or str(instance.edit_uuid) != str(edit_uuid):
+             raise Http404
 
-    def patch(self, request, uuid, edit_uuid, format=None):
-        event = self.get_object(uuid, edit_uuid)
-        serializer = EventAdminSerializer(event, data=request.data, partial=True)
-        if serializer.is_valid():
-            updated_event = serializer.save()
-            participants = updated_event.participants.all()
+        return super().update(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        updated = serializer.save()
+        participants = list(updated.participants.all())
+        try:
             for participant in participants:
-                try:
-                    send_event_update_notification_task.send(
-                        participant_email=participant.email,
-                        participant_name=participant.name,
-                        event_name=updated_event.name,
-                        event_uuid=str(updated_event.uuid)
-                    )
-                except Exception as e:
-                    logger.error(f"Failed to enqueue update task for participant {participant.email} event {updated_event.uuid}: {e}")
+                send_event_update_notification_task.send(
+                    participant_email=participant.email,
+                    participant_name=participant.name,
+                    event_name=updated.name,
+                    event_uuid=str(updated.uuid),
+                )
+        except Exception:
+            logger.exception(
+                "Failed to enqueue update task for participant %s event %s",
+                participant.email,
+                updated.uuid,
+            )
 
-            return Response(serializer.data, status=200)
-        return Response(serializer.errors, status=400)
+    def destroy(self, request, *args, **kwargs):
+        edit_uuid = kwargs.get('edit_uuid')
+        instance = self.get_object()
+        if not edit_uuid or str(instance.edit_uuid) != str(edit_uuid):
+             raise Http404
 
-    def delete(self, request, uuid, edit_uuid, format=None):
-        event = self.get_object(uuid, edit_uuid)
-        participants_to_notify = list(event.participants.all())
-        event_name = event.name
-        event.delete()
-        for participant in participants_to_notify:
-            try:
+        return super().destroy(request, *args, **kwargs)
+
+    def perform_destroy(self, instance):
+        participants = list(instance.participants.all())
+        name = instance.name
+        instance.delete()
+        logger.info("Event deleted: %s", str(instance))
+        try:
+            for participant in participants:
                 send_event_cancellation_notification_task.send(
                     participant_email=participant.email,
                     participant_name=participant.name,
-                    event_name=event_name,
+                    event_name=name,
                 )
-            except Exception as e:
-                logger.error(f"Failed to enqueue cancellation task for participant {participant.email} (event {uuid} deleted): {e}")
+        except Exception:
+            logger.exception(
+                "Failed to enqueue cancellation task for participant %s event %s",
+                participant.email,
+                instance.uuid,
+            )
 
-        return Response(status=204)
+    def retrieve(self, request, *args, **kwargs):
+        edit_uuid = kwargs.get('edit_uuid')
+        instance = self.get_object()
+        if not edit_uuid or str(instance.edit_uuid) != str(edit_uuid):
+             raise Http404
+        return super().retrieve(request, *args, **kwargs)
 
-class EventDetail(APIView):
-    serializer_class = EventSerializer
-
-    def get_object(self, uuid):
-        try:
-            return Event.objects.get(uuid=uuid)
-        except Event.DoesNotExist:
-            raise Http404
-
-    def get(self, request, uuid, format=None):
-        event = self.get_object(uuid)
-        serializer = EventSerializer(event)
-        return Response(serializer.data, status=200)
-
-
-class InvitationCreate(APIView):
-    serializer_class = InvitationSerializer
-
-    def post(self, request, format=None):
-        serializer = InvitationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-class InvitationAccept(APIView):
-    serializer_class = AcceptInvitationSerializer
-
-    def post(self, request, format=None):
-        serializer = AcceptInvitationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-class InvitationDelete(APIView):
-
-    def get_object(self, uuid, edit_uuid):
-        try:
-            invitation = Invitation.objects.get(uuid=uuid)
-            if str(invitation.event.edit_uuid) != str(edit_uuid):
-                raise Http404
-            return invitation
-        except Invitation.DoesNotExist:
-            raise Http404
-
-    def delete(self, request, uuid, edit_uuid, format=None):
-        invitation = self.get_object(uuid, edit_uuid)
-        invitation.delete()
-        return Response(status=204)
-
-class InvitationDetails(APIView):
-    serializer_class = InvitationDetailsSerializer
-
-    def get_object(self, uuid):
-        try:
-            return Invitation.objects.get(uuid=uuid)
-        except Invitation.DoesNotExist:
-            raise Http404
-
-    def get(self, request, uuid, format=None):
-        invitation = self.get_object(uuid)
-        serializer = InvitationDetailsSerializer(invitation)
-        return Response(serializer.data, status=200)
-
-class PersonalizedInvitationCreate(APIView):
-    serializer_class = PersonalizedInvitationSerializer
-
-    def post(self, request, format=None):
-        serializer = PersonalizedInvitationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-class PersonalizedInvitationAccept(APIView):
-    serializer_class = AcceptPersonalizedInvitationSerializer
-
-    def post(self, request, format=None):
-        serializer = AcceptPersonalizedInvitationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-class PersonalizedInvitationDelete(APIView):
-
-    def get_object(self, uuid, edit_uuid):
-        try:
-            invitation = PersonalizedInvitation.objects.get(uuid=uuid)
-            if str(invitation.event.edit_uuid) != str(edit_uuid):
-                raise Http404
-            return invitation
-        except PersonalizedInvitation.DoesNotExist:
-            raise Http404
-
-    def delete(self, request, uuid, edit_uuid, format=None):
-        invitation = self.get_object(uuid, edit_uuid)
-        invitation.delete()
-        return Response(status=204)
-
-
-class PersonalizedInvitationDetails(APIView):
-    serializer_class = PersonalizedInvitationDetailsSerializer
-
-    def get_object(self, uuid):
-        try:
-            return PersonalizedInvitation.objects.get(uuid=uuid)
-        except PersonalizedInvitation.DoesNotExist:
-            raise Http404
-
-    def get(self, request, uuid, format=None):
-        invitation = self.get_object(uuid)
-        serializer = PersonalizedInvitationDetailsSerializer(invitation)
-        return Response(serializer.data, status=200)
-
-
-class LeaveEvent(APIView):
-    def get_object(self, uuid):
-        try:
-            return Participant.objects.get(uuid=uuid)
-        except Participant.DoesNotExist:
-            raise Http404
-
-    def delete(self, request, uuid, format=None):
-        participant = self.get_object(uuid)
-        participant.delete()
-        return Response(status=204)
-
-
-class DeleteParticipantAsAdmin(APIView):
-    def get_object(self, id, edit_uuid):
-        try:
-           participant = Participant.objects.get(id=id)
-        except Participant.DoesNotExist:
-            raise Http404
+    @action(methods=['delete'], detail=False)
+    def remove_participant(self, request, id, edit_uuid, format=None):  # noqa: A002, ARG002
+        participant = get_object_or_404(Participant, id=id)
         if str(participant.event.edit_uuid) != str(edit_uuid):
             raise Http404
-        return participant
-
-    def delete(self, request, id, edit_uuid, format=None):
-        participant = self.get_object(id, edit_uuid)
         participant.delete()
         return Response(status=204)
 
 
-class EventICSDownloadView(APIView):
-    def get_object(self, uuid):
-        try:
-            return Event.objects.get(uuid=uuid)
-        except Event.DoesNotExist:
+class InvitationViewSet(mixins.CreateModelMixin,
+                        mixins.RetrieveModelMixin,
+                        viewsets.GenericViewSet):
+
+    queryset = Invitation.objects.all()
+    lookup_field = 'uuid'
+
+    def get_serializer_class(self):
+        if self.action == 'accept':
+            return InvitationAcceptSerializer
+        if self.action == 'retrieve':
+            return InvitationDetailsSerializer
+        return InvitationCreateSerializer
+
+    @action(methods=['DELETE'], detail=False,
+            url_path='remove/(?P<uuid>[^/.]+)/(?P<edit_uuid>[^/.]+)')
+    def remove(self, request, uuid, edit_uuid):  # noqa: ARG002
+        invitation = get_object_or_404(Invitation, uuid=uuid)
+        if str(invitation.event.edit_uuid) != str(edit_uuid):
             raise Http404
+        invitation.delete()
+        return Response(status=204)
+
+    @action(methods=['POST'], detail=False)
+    def accept(self, request, format=None):  # noqa: A002, ARG002
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+class PersonalizedInvitationViewSet(mixins.CreateModelMixin,
+                        mixins.RetrieveModelMixin,
+                        viewsets.GenericViewSet):
+
+    queryset = PersonalizedInvitation.objects.all()
+    lookup_field = 'uuid'
+
+    def get_serializer_class(self):
+        if self.action == 'accept':
+            return PersInvAcceptSerializer
+        if self.action == 'retrieve':
+            return PersInvDetailsSerializer
+        return PersInvCreateSerializer
+
+    @action(methods=['DELETE'], detail=False,
+            url_path='remove/(?P<uuid>[^/.]+)/(?P<edit_uuid>[^/.]+)')
+    def remove(self, request, uuid, edit_uuid):  # noqa: ARG002
+        invitation = get_object_or_404(PersonalizedInvitation, uuid=uuid)
+        if str(invitation.event.edit_uuid) != str(edit_uuid):
+            raise Http404
+        invitation.delete()
+        return Response(status=204)
+
+    @action(methods=['POST'], detail=False)
+    def accept(self, request, format=None):  # noqa: A002, ARG002
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+class EventViewSet(mixins.RetrieveModelMixin,
+                   viewsets.GenericViewSet):
+
+    queryset = Event.objects.all()
+    lookup_field = 'uuid'
+    serializer_class = EventSerializer
 
     @extend_schema(
         summary="Download event as ICS file",
@@ -262,80 +206,67 @@ class EventICSDownloadView(APIView):
                 description='UUID of the event',
                 required=True,
                 type=str,
-                location=OpenApiParameter.PATH
-            )
+                location=OpenApiParameter.PATH,
+            ),
         ],
         responses={
             200: OpenApiResponse(
                 response=None,
-                description='ICS calendar file for the event'
+                description='ICS calendar file for the event',
             ),
             404: OpenApiResponse(description='Event not found'),
         },
     )
-    def get(self, request, uuid, format=None):
-        event = self.get_object(uuid)
+    @action(methods=['GET'], detail=False, url_path='ics/(?P<uuid>[^/.]+)')
+    def convert_to_ics(self, request, uuid, format=None):  # noqa: A002, ARG002
+        event = self.get_object()
         ics_content = event_to_ics(event)
         response = HttpResponse(ics_content, content_type='text/calendar')
         response['Content-Disposition'] = f'attachment; filename="{event.name}.ics"'
         return response
 
-class CommentsCreate(APIView):
+    @action(methods=['DELETE'], detail=False, url_path='leave/(?P<uuid>[^/.]+)')
+    def leave(self, request, uuid, format=None):  # noqa: A002, ARG002
+        participant = get_object_or_404(Participant, uuid=uuid)
+        participant.delete()
+        return Response(status=204)
+
+
+class CommentViewSet(mixins.CreateModelMixin,
+                     viewsets.GenericViewSet):
+
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
 
-    def post(self, request, format=None):
-        serializer = CommentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-class CommentsList(APIView):
-    serializer_class = CommentSerializer
-
-    def get_object(self, event_uuid):
-        try:
-            return Event.objects.get(uuid=event_uuid)
-        except Event.DoesNotExist:
-            raise Http404
-
-    def get(self, request, event_uuid, format=None):
-        event = self.get_object(event_uuid)
+    @action(methods=['GET'], detail=False, url_path='(?P<event_uuid>[^/.]+)')
+    def list_by_event(self, request, event_uuid, format=None):  # noqa: A002, ARG002
+        event = get_object_or_404(Event, uuid=event_uuid)
         comments = event.comments.filter(parent__isnull=True)
-        serializer = CommentSerializer(comments, many=True)
-        return Response(serializer.data, status=200)
+        serializer = self.get_serializer(comments, many=True)
+        return Response(serializer.data)
 
-
-class CommentsDelete(APIView):
-    serializer_class = CommentSerializer
-
-    def get_object(self, comment_uuid, participant_or_event_edit_uuid):
-        try:
-            comment = Comment.objects.get(uuid=comment_uuid)
-            if str(comment.event.edit_uuid) != str(participant_or_event_edit_uuid) \
-                    and str(comment.author.uuid) != str(participant_or_event_edit_uuid):
+    @action(methods=['DELETE'], detail=False,
+            url_path='remove/(?P<comment_uuid>[^/.]+)/(?P<participant_or_event_edit_uuid>[^/.]+)')
+    def remove(self, request, comment_uuid, participant_or_event_edit_uuid):  # noqa: ARG002
+        comment = get_object_or_404(Comment, uuid=comment_uuid)
+        if str(comment.event.edit_uuid) != str(participant_or_event_edit_uuid) \
+            and str(comment.author.uuid) != str(participant_or_event_edit_uuid):
                 raise Http404
-            return comment
-        except Comment.DoesNotExist:
-            raise Http404
-
-    def delete(self, request, comment_uuid, participant_or_event_edit_uuid, format=None):
-        comment = self.get_object(comment_uuid, participant_or_event_edit_uuid)
         comment.delete()
         return Response(status=204)
 
 
-def test_email_view(request):
+def test_email_view(request):  # noqa: ARG001
     recipient_email = '' # enter test email here
     name = "John"
     surname = "Doe"
     event_details = {
         'name': "Dni pomidora w Szczebodzicach",
-        'date': date.today(),
-        'event_link': "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        'date': datetime.datetime.now(tz=datetime.timezone.utc).date(),
+        'event_link': "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     }
     try:
         send_event_invite_email_task(recipient_email, name, surname, event_details)
         return HttpResponse("Invite email sent successfully!")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return HttpResponse(f"Error sending email: {e}") # For debugging purposes

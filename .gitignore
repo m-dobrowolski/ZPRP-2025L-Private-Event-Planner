@@ -138,4 +138,7 @@ GitHub.sublime-settings
 .history
 
 /.idea
+frontend/.idea
 event_images/
+backend/static/
+logs/nginx_logs

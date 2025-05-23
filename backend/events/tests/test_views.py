@@ -1,14 +1,30 @@
-from rest_framework.test import APITestCase
-from rest_framework import status
-from django.urls import reverse
-from events.factories import EventFactory, ParticipantFactory, InvitationFactory, PersonalizedInvitationFactory
-from events.models import Event, Invitation, PersonalizedInvitation, Participant
 from uuid import uuid4
+
+import pytest
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+from events.factories import (
+    CommentFactory,
+    EventFactory,
+    InvitationFactory,
+    ParticipantFactory,
+    PersonalizedInvitationFactory,
+)
+from events.models import (
+    Comment,
+    Event,
+    Invitation,
+    Participant,
+    PersonalizedInvitation,
+)
+
 
 class EventCreateTests(APITestCase):
 
     def setUp(self):
-        self.url = reverse('events:event-create')
+        self.url = reverse('events:event-admin-list')
         self.event = EventFactory.build()
         self.valid_payload = {
             "name": self.event.name,
@@ -19,7 +35,7 @@ class EventCreateTests(APITestCase):
             "description": self.event.description,
             "link": self.event.link,
             "organizer_name": self.event.organizer_name,
-            "participants_limit": self.event.participants_limit
+            "participants_limit": self.event.participants_limit,
         }
 
     def test_create_event_successfully(self):
@@ -64,8 +80,8 @@ class EventCreateTests(APITestCase):
 class EventAdminDetailTests(APITestCase):
     def setUp(self):
         self.event = EventFactory()
-        participant1 = ParticipantFactory(event=self.event)
-        participant2 = ParticipantFactory(event=self.event)
+        ParticipantFactory(event=self.event)
+        ParticipantFactory(event=self.event)
         self.uuid = str(self.event.uuid)
         self.edit_uuid = str(self.event.edit_uuid)
 
@@ -107,7 +123,8 @@ class EventAdminDetailTests(APITestCase):
     def test_patch_event_admin_detail_invalid_date(self):
         url = reverse('events:event-admin-detail', args=[self.uuid, self.edit_uuid])
 
-        data = {"start_datetime": self.event.end_datetime, "end_datetime": self.event.start_datetime}
+        data = {"start_datetime": self.event.end_datetime,
+                "end_datetime": self.event.start_datetime}
         response = self.client.patch(url, data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -118,7 +135,7 @@ class EventAdminDetailTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-        with self.assertRaises(Event.DoesNotExist):
+        with pytest.raises(Event.DoesNotExist):
             Event.objects.get(uuid=self.uuid)
 
 
@@ -143,16 +160,33 @@ class EventDetailsTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+class InvitationDetailTests(APITestCase):
+    def setUp(self):
+        self.event = EventFactory()
+        self.inv = InvitationFactory(event=self.event)
+
+    def test_correct_inv_uuid(self):
+        url = reverse('events:invitation-detail',
+                      args=[self.inv.uuid])
+        response = self.client.get(url)
+        inv_data = response.data
+        self.assertEqual(inv_data['event_name'], self.event.name)
+        self.assertEqual(str(inv_data['event_uuid']), str(self.event.uuid))
+
+    def test_invalid_inv_uuid(self):
+        url = reverse('events:invitation-detail', args=[uuid4()])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 class InvitationCreateTests(APITestCase):
     def setUp(self):
-        self.url = reverse('events:invitation-create')
+        self.url = reverse('events:invitation-list')
         self.event = EventFactory()
 
     def test_create_invitation_successfully(self):
         payload = {
             "event": str(self.event.uuid),
-            "event_edit_uuid": str(self.event.edit_uuid)
+            "event_edit_uuid": str(self.event.edit_uuid),
         }
         response = self.client.post(self.url, data=payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -162,7 +196,7 @@ class InvitationCreateTests(APITestCase):
     def test_invalid_edit_uuid(self):
         payload = {
             "event": str(self.event.uuid),
-            "event_edit_uuid": str(uuid4())
+            "event_edit_uuid": str(uuid4()),
         }
         response = self.client.post(self.url, data=payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -179,7 +213,7 @@ class InvitationAcceptTests(APITestCase):
         payload = {
             "invitation": str(self.invitation.uuid),
             "name": "John Doe",
-            "email": "john@example.com"
+            "email": "john@example.com",
         }
         response = self.client.post(self.url, data=payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -192,7 +226,7 @@ class InvitationAcceptTests(APITestCase):
         payload = {
             "invitation": str(uuid4()),
             "name": "John Doe",
-            "email": "example@example.com"
+            "email": "example@example.com",
         }
         response = self.client.post(self.url, data=payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -212,35 +246,59 @@ class InvitationAcceptTests(APITestCase):
         payload = {
             "invitation": str(self.invitation.uuid),
             "name": "John Doe",
-            "email": existing_participant.email
+            "email": existing_participant.email,
         }
         response = self.client.post(self.url, data=payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Participant with this email already exists in this event.", str(response.data))
+        self.assertIn("Participant with this email already exists in this event.",
+                      str(response.data))
 
 
 class InvitationDeleteTests(APITestCase):
     def setUp(self):
         self.event = EventFactory()
         self.invitation = InvitationFactory(event=self.event)
-        self.url = reverse('events:invitation-delete', args=[self.invitation.uuid, self.event.edit_uuid])
+        self.url = reverse('events:invitation-remove', args=[self.invitation.uuid,
+                                                             self.event.edit_uuid])
 
     def test_delete_invitation_successfully(self):
         response = self.client.delete(self.url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        with self.assertRaises(Invitation.DoesNotExist):
+        with pytest.raises(Invitation.DoesNotExist):
             Invitation.objects.get(uuid=self.invitation.uuid)
 
     def test_delete_invitation_invalid_edit_uuid(self):
         invalid_edit_uuid = str(uuid4())
-        url = reverse('events:invitation-delete', args=[self.invitation.uuid, invalid_edit_uuid])
+        url = reverse('events:invitation-remove',
+                      args=[self.invitation.uuid, invalid_edit_uuid])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
+class PersonalizedInvitationDetailTests(APITestCase):
+    def setUp(self):
+        self.event = EventFactory()
+        self.pers_inv = PersonalizedInvitationFactory(event=self.event)
+
+    def test_correct_inv_uuid(self):
+        url = reverse('events:personalized-invitation-detail',
+                      args=[self.pers_inv.uuid])
+        response = self.client.get(url)
+        inv_data = response.data
+        self.assertEqual(str(inv_data['uuid']), str(self.pers_inv.uuid))
+        self.assertEqual(inv_data['name'], self.pers_inv.name)
+        self.assertEqual(inv_data['event_name'], self.event.name)
+        self.assertEqual(str(inv_data['event_uuid']), str(self.event.uuid))
+
+    def test_invalid_inv_uuid(self):
+        url = reverse('events:personalized-invitation-detail',
+                args=[uuid4()])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
 class PersonalizedInvitationCreateTests(APITestCase):
     def setUp(self):
-        self.url = reverse('events:personalized-invitation-create')
+        self.url = reverse('events:personalized-invitation-list')
         self.event = EventFactory()
 
     def test_create_invitation_successfully(self):
@@ -275,7 +333,7 @@ class PersonalizedInvitationAcceptTests(APITestCase):
     def test_accept_invitation_successfully(self):
         payload = {
             "invitation": str(self.invitation.uuid),
-            "email": "john@example.com"
+            "email": "john@example.com",
         }
         response = self.client.post(self.url, data=payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -287,7 +345,7 @@ class PersonalizedInvitationAcceptTests(APITestCase):
     def test_invalid_invitation(self):
         payload = {
             "invitation": str(uuid4()),
-            "email": "example@example.com"
+            "email": "example@example.com",
         }
         response = self.client.post(self.url, data=payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -305,17 +363,18 @@ class PersonalizedInvitationAcceptTests(APITestCase):
         existing_participant = ParticipantFactory(event=self.event)
         payload = {
             "invitation": str(self.invitation.uuid),
-            "email": existing_participant.email
+            "email": existing_participant.email,
         }
         response = self.client.post(self.url, data=payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Participant with this email already exists in this event.", str(response.data))
+        self.assertIn("Participant with this email already exists in this event.",
+                      str(response.data))
 
     def test_ignore_given_name(self):
         payload = {
             "invitation": str(self.invitation.uuid),
             "email": "john@example.com",
-            "name": "X"*10
+            "name": "X"*10,
         }
         response = self.client.post(self.url, data=payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -324,21 +383,23 @@ class PersonalizedInvitationAcceptTests(APITestCase):
         self.assertTrue(self.event.participants.filter(uuid=response.data['uuid']).exists())
 
 
-class InvitationDeleteTests(APITestCase):
+class PersonalizedInvitationDeleteTests(APITestCase):
     def setUp(self):
         self.event = EventFactory()
         self.invitation = PersonalizedInvitationFactory(event=self.event)
 
     def test_delete_invitation_successfully(self):
-        url = reverse('events:personalized-invitation-delete', args=[self.invitation.uuid, self.event.edit_uuid])
+        url = reverse('events:personalized-invitation-remove',
+                      args=[self.invitation.uuid, self.event.edit_uuid])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        with self.assertRaises(PersonalizedInvitation.DoesNotExist):
+        with pytest.raises(PersonalizedInvitation.DoesNotExist):
             PersonalizedInvitation.objects.get(uuid=self.invitation.uuid)
 
     def test_delete_invitation_invalid_edit_uuid(self):
         invalid_edit_uuid = str(uuid4())
-        url = reverse('events:personalized-invitation-delete', args=[self.invitation.uuid, invalid_edit_uuid])
+        url = reverse('events:personalized-invitation-remove',
+                      args=[self.invitation.uuid, invalid_edit_uuid])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -349,15 +410,15 @@ class LeaveEventTests(APITestCase):
         self.participant = ParticipantFactory(event=self.event)
 
     def test_leave_event_successfully(self):
-        url = reverse('events:leave-event', args=[self.participant.uuid])
+        url = reverse('events:event-leave', args=[self.participant.uuid])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        with self.assertRaises(Participant.DoesNotExist):
+        with pytest.raises(Participant.DoesNotExist):
             Participant.objects.get(uuid=self.participant.uuid)
 
     def test_leave_event_invalid_uuid(self):
         invalid_uuid = str(uuid4())
-        url = reverse('events:leave-event', args=[invalid_uuid])
+        url = reverse('events:event-leave', args=[invalid_uuid])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -368,15 +429,79 @@ class DeleteParticipantAsAdminTest(APITestCase):
         self.participant = ParticipantFactory(event=self.event)
 
     def test_delete_participant_successfully(self):
-        url = reverse('events:delete-participant-admin', args=[self.participant.id, self.event.edit_uuid])
+        url = reverse('events:event-admin-remove-participant',
+                      args=[self.participant.id, self.event.edit_uuid])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        with self.assertRaises(Participant.DoesNotExist):
+        with pytest.raises(Participant.DoesNotExist):
             Participant.objects.get(id=self.participant.id)
 
     def test_delete_participant_invalid_edit_uuid(self):
         invalid_edit_uuid = str(uuid4())
-        url = reverse('events:delete-participant-admin', args=[self.participant.id, invalid_edit_uuid])
+        url = reverse('events:event-admin-remove-participant',
+                      args=[self.participant.id, invalid_edit_uuid])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+
+class CommentViewSetTests(APITestCase):
+
+    def setUp(self):
+        self.event = EventFactory()
+        self.comment_author_uuid = uuid4()
+        self.comment = CommentFactory(event=self.event, parent=None,
+                                      author__uuid=self.comment_author_uuid)
+        self.comment_uuid = str(self.comment.uuid)
+        self.event_uuid = str(self.event.uuid)
+        self.event_edit_uuid = str(self.event.edit_uuid)
+
+    def test_list_by_event_returns_comments(self):
+        url = reverse('events:comment-list-by-event',
+                      kwargs={'event_uuid': self.event_uuid})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        comment_data = response.data[0]
+        self.assertEqual(self.comment.content, comment_data['content'])
+
+    def test_list_by_event_invalid_event_uuid(self):
+        url = reverse('events:comment-list-by-event',
+                      kwargs={'event_uuid': str(uuid4())})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_remove_comment_with_valid_event_edit_uuid(self):
+        url = reverse('events:comment-remove', kwargs={
+            'comment_uuid': self.comment_uuid,
+            'participant_or_event_edit_uuid': self.event_edit_uuid,
+        })
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Comment.objects.filter(uuid=self.comment_uuid).exists())
+
+    def test_remove_comment_with_valid_author_uuid(self):
+        url = reverse('events:comment-remove', kwargs={
+            'comment_uuid': self.comment_uuid,
+            'participant_or_event_edit_uuid': str(self.comment_author_uuid),
+        })
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Comment.objects.filter(uuid=self.comment_uuid).exists())
+
+    def test_remove_comment_invalid_comment_uid_returns_404(self):
+        url = reverse('events:comment-remove', kwargs={
+            'comment_uuid': str(uuid4()),
+            'participant_or_event_edit_uuid': self.event_edit_uuid,
+        })
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_remove_comment_invalid_participant_or_edit_uuid_raises_404(self):
+        invalid_uuid = str(uuid4())
+        url = reverse('events:comment-remove', kwargs={
+            'comment_uuid': self.comment_uuid,
+            'participant_or_event_edit_uuid': invalid_uuid,
+        })
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
