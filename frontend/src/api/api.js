@@ -120,7 +120,7 @@ export async function createUniversalInvitation(eventUuid, editUuid) {
     return sendData('invitation/', 'POST', body);
 }
 
-export async function deleteGenericInvitation(invitationUuid, editUuid) {
+export async function deleteUniversalInvitation(invitationUuid, editUuid) {
     return fetchData(`invitation/remove/${invitationUuid}/${editUuid}/`, { method: 'DELETE' });
 }
 
@@ -134,7 +134,7 @@ export async function acceptUniversalInvitation(invitationUuid, name, email) {
 }
 
 
-export async function getGenericInvitationDetails(invitationUuid) {
+export async function getUniversalInvitationDetails(invitationUuid) {
      return fetchData(`invitation/${invitationUuid}/`);
 }
 
