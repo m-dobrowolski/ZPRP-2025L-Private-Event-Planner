@@ -5,8 +5,12 @@ import { createEvent } from '@/api/api';
 import styles from '@/app/[locale]/create-event/createEvent.module.css';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { useParams } from "next/navigation";
 
 export default function CreateEventForm() {
+    const params = useParams();
+    const currentLocale = params.locale;
+
     const { t } = useTranslation('translation');
 
     const [successData, setSuccessData] = useState(null);
@@ -22,17 +26,52 @@ export default function CreateEventForm() {
         organizer_name: '',
         participants_limit: '',
     });
+    const [dateError, setDateError] = useState(null);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: files ? files[0] : value
-        }));
+        const updatedFormData = {
+        ...formData,
+        [name]: files ? files[0] : value
+    };
+
+    setFormData(updatedFormData);
+
+        if (name === 'start_datetime' || name === 'end_datetime') {
+        const { start_datetime, end_datetime } = updatedFormData;
+
+        if (start_datetime && end_datetime) {
+            const startDate = new Date(start_datetime);
+            const endDate = new Date(end_datetime);
+
+            if (endDate <= startDate) {
+                setDateError(t('end_date_before_start_error'));
+            } else {
+                setDateError('');
+            }
+        } else {
+            setDateError('');
+        }
+    }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const { start_datetime, end_datetime } = formData;
+
+        if (start_datetime && end_datetime) {
+            const startDate = new Date(start_datetime);
+            const endDate = new Date(end_datetime);
+
+            if (endDate <= startDate) {
+                setDateError(t('end_date_before_start_error'));
+                return
+            } else {
+                setDateError('');
+            }
+        } else {
+             setDateError('');
+        }
 
         try {
             const formDataToSend = new FormData();
@@ -63,7 +102,7 @@ export default function CreateEventForm() {
                         {t('access_link_label')}:
                     </div>
                     <div className={styles.link}>
-                        <Link href={`/event/${successData.uuid}`}>
+                        <Link href={`/${currentLocale}/event/${successData.uuid}`}>
                             {`http://localhost:3000/event/${successData.uuid}`}
                         </Link>
                     </div>
@@ -74,7 +113,7 @@ export default function CreateEventForm() {
                         {t('manage_link_label')}:
                     </div>
                     <div className={styles.link}>
-                        <Link href={`/event/${successData.uuid}/${successData.edit_uuid}`}>
+                        <Link href={`/${currentLocale}/event/${successData.uuid}/${successData.edit_uuid}`}>
                             {`http://localhost:3000/event/${successData.uuid}/${successData.edit_uuid}`}
                         </Link>
                     </div>
@@ -135,6 +174,7 @@ export default function CreateEventForm() {
                             className={styles.input}
                             required
                         />
+                        {dateError && <p className={styles.errorMessage}>{dateError}</p>}
                     </div>
                 </div>
 

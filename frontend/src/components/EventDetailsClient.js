@@ -184,11 +184,11 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            Add to Google Calendar
+                            {t('add_to_google_calendar')}
                         </a>
                     </div>
                     <div className={styles.rightDetailsButton}>
-                       <button onClick={exportEventICS}>Export as ICS</button>
+                       <button onClick={exportEventICS}>{t('export_as_ics')}</button>
                     </div>
                 </div>
             </div>
@@ -210,7 +210,7 @@ export default function EventDetailsClient({ uuid: uuidProp }) {
             )}
             {eventData.link && (
                 <div className={styles.detailItem}>
-                    <strong>{t('more_info_label')}:</strong> <a href={eventData.link} target="_blank" rel="noopener noreferrer">{eventData.link}</a>
+                    <strong>{t('external_link_label')}:</strong> <a href={eventData.link} target="_blank" rel="noopener noreferrer">{eventData.link}</a>
                 </div>
             )}
             {eventData.participants_limit !== null && eventData.participants_limit !== undefined && eventData.participants_limit !== '' && (

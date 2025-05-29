@@ -84,6 +84,13 @@
     font-weight: 500;
 }
 
+.errorMessage {
+    color: #dc3545;
+    margin-top: 1.25rem;
+    text-align: center;
+    font-weight: 500;
+}
+
 .section {
      margin-top: 2.5rem;
      padding-top: 1.5rem;
