@@ -109,5 +109,6 @@
   "export_as_ics": "Eksportuj jako ICS",
   "add_to_google_calendar": "Dodaj do Google Calendar",
   "loading_event": "Ładowanie wydarzenia...",
-  "end_date_before_start_error": "Data zakończenia musi być później niż data rozpoczęcia."
+  "end_date_before_start_error": "Data zakończenia musi być później niż data rozpoczęcia.",
+  "saving_button": "Zapisywanie..."
 }

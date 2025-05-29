@@ -71,6 +71,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
     const [errorAddPersonalized, setErrorAddPersonalized] = useState(null);
     const [errorAddUniversal, setErrorAddUniversal] = useState(null);
     const [errorDeleteComment, setErrorDeleteComment] = useState(null);
+    const [dateError, setDateError] = useState(null);
 
     const [comments, setComments] = useState([]);
     const [deletingCommentId, setDeletingCommentId] = useState(null);
@@ -133,30 +134,70 @@ export default function EditEventClient({ uuid, edit_uuid }) {
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
-        if (name === 'image') {
-            const file = files ? files[0] : null;
-            setFormData(prev => ({
-                ...prev,
-                [name]: file
-            }));
-            if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setImagePreview(reader.result);
-                };
-                reader.readAsDataURL(file);
+         let newFormData;
+    if (name === 'image') {
+        const file = files ? files[0] : null;
+        newFormData = {
+            ...formData,
+            [name]: file
+        };
+    } else {
+        newFormData = {
+            ...formData,
+            [name]: value
+        };
+    }
+
+    setFormData(newFormData);
+
+    if (name === 'image') {
+        const file = newFormData.image;
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setImagePreview(formData.current_image_url);
+        }
+    }
+
+    if (name === 'start_datetime' || name === 'end_datetime') {
+        const { start_datetime, end_datetime } = newFormData;
+
+        if (start_datetime && end_datetime) {
+            const startDate = new Date(start_datetime);
+            const endDate = new Date(end_datetime);
+
+            if (endDate <= startDate) {
+                setDateError(t('end_date_before_start_error'));
             } else {
-                setImagePreview(formData.current_image_url);
+                setDateError('');
             }
         } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
+            setDateError('');
         }
+    }
     };
 
     const handleSubmit = async () => {
+        const { start_datetime, end_datetime } = formData;
+
+        if (start_datetime && end_datetime) {
+            const startDate = new Date(start_datetime);
+            const endDate = new Date(end_datetime);
+
+            if (endDate <= startDate) {
+                setDateError(t('end_date_before_start_error'));
+                return;
+            } else {
+                setDateError('');
+            }
+        } else {
+            setDateError('');
+        }
+
         setLoadingSave(true);
         setErrorSave(null);
 
@@ -473,6 +514,7 @@ export default function EditEventClient({ uuid, edit_uuid }) {
                             required
                         />
                     </div>
+                    {dateError && <p className={styles.errorMessage}>{dateError}</p>}
                 </div>
 
                 <div className={styles.formGroup}>
