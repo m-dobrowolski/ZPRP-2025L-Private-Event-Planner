@@ -107,6 +107,8 @@
   "invitation_joined_event_message": "Success! You have joined the event.",
 
   "export_as_ics": "Export as ICS",
-  "add_to_google_calendar": "Add to Google Calendar"
+  "add_to_google_calendar": "Add to Google Calendar",
+  "loading_event": "Loading Event...",
+  "end_date_before_start_error": "End date has to be after the start date."
 
 }

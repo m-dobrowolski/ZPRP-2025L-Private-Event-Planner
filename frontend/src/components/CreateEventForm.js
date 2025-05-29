@@ -26,17 +26,52 @@ export default function CreateEventForm() {
         organizer_name: '',
         participants_limit: '',
     });
+    const [dateError, setDateError] = useState(null);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: files ? files[0] : value
-        }));
+        const updatedFormData = {
+        ...formData,
+        [name]: files ? files[0] : value
+    };
+
+    setFormData(updatedFormData);
+
+        if (name === 'start_datetime' || name === 'end_datetime') {
+        const { start_datetime, end_datetime } = updatedFormData;
+
+        if (start_datetime && end_datetime) {
+            const startDate = new Date(start_datetime);
+            const endDate = new Date(end_datetime);
+
+            if (endDate <= startDate) {
+                setDateError(t('end_date_before_start_error'));
+            } else {
+                setDateError('');
+            }
+        } else {
+            setDateError('');
+        }
+    }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const { start_datetime, end_datetime } = formData;
+
+        if (start_datetime && end_datetime) {
+            const startDate = new Date(start_datetime);
+            const endDate = new Date(end_datetime);
+
+            if (endDate <= startDate) {
+                setDateError(t('end_date_before_start_error'));
+                return
+            } else {
+                setDateError('');
+            }
+        } else {
+             setDateError('');
+        }
 
         try {
             const formDataToSend = new FormData();
@@ -139,6 +174,7 @@ export default function CreateEventForm() {
                             className={styles.input}
                             required
                         />
+                        {dateError && <p className={styles.errorMessage}>{dateError}</p>}
                     </div>
                 </div>
 
