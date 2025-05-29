@@ -104,5 +104,8 @@
   "accept_personalized_invitation_page_title": "Przyjmij spersonalizowane zaproszenie",
 
   "invitation_save_url_message": "WAŻNE: Zapisz ten link, nie będzie on później dostępny. Jest potrzebny do komentowania wydarzenia.",
-  "invitation_joined_event_message": "Sukces! Dołączono do wydarzenia."
+  "invitation_joined_event_message": "Sukces! Dołączono do wydarzenia.",
+
+  "export_as_ics": "Eksportuj jako ICS",
+  "add_to_google_calendar": "Dodaj do Google Calendar"
 }

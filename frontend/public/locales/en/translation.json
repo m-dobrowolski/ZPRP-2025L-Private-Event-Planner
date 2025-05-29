@@ -104,6 +104,9 @@
   "accept_personalized_invitation_page_title": "Accept Personalized Invitation",
 
   "invitation_save_url_message": "IMPORTANT: Please save this URL as it can only be accessed once. It will be needed to comment on the event.",
-  "invitation_joined_event_message": "Success! You have joined the event."
+  "invitation_joined_event_message": "Success! You have joined the event.",
+
+  "export_as_ics": "Export as ICS",
+  "add_to_google_calendar": "Add to Google Calendar"
 
 }
