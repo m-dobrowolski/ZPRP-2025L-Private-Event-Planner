@@ -1,8 +1,11 @@
-import factory
 import random
-from .models import Event, Invitation, PersonalizedInvitation, Participant, Comment
-from django.utils import timezone
 from datetime import timedelta
+
+import factory
+from django.utils import timezone
+
+from .models import Comment, Event, Invitation, Participant, PersonalizedInvitation
+
 
 class EventFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -10,7 +13,8 @@ class EventFactory(factory.django.DjangoModelFactory):
 
     name = factory.Faker('sentence', nb_words=3)
     location = factory.Faker('address')
-    start_datetime = factory.LazyFunction(lambda: timezone.now() + timezone.timedelta(days=7))
+    start_datetime = factory.LazyFunction(
+        lambda: timezone.now() + timezone.timedelta(days=7))
     organizer_email = factory.Faker('email')
     description = factory.Faker('text', max_nb_chars=200)
     link = factory.Faker('url')

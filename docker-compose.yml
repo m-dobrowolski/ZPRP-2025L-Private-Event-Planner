@@ -1,6 +1,19 @@
 version: '3.9'
 
 services:
+  reverse-proxy:
+    image: nginx:1.27.3
+    restart: always
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx:/etc/nginx/templates
+      - media:/backend/media
+      - static:/backend/static
+    depends_on:
+      - backend
+      - frontend
   frontend:
     build:
       context: ./frontend
@@ -11,9 +24,9 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -33,8 +46,9 @@ services:
   backend:
     command: >
       sh -c "./wait-for-it.sh db:5432 --
+      && python manage.py collectstatic --no-input
       && python manage.py migrate
-      && python manage.py runserver 0.0.0:8000"
+      && gunicorn private_event_planner.wsgi:application --bind 0.0.0.0:8000 --access-logfile /var/log/gunicorn/access.log --error-logfile /var/log/gunicorn/error.log"
     build:
       context: ./backend
     ports:
@@ -42,6 +56,7 @@ services:
     expose:
       - 8000
     environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -60,7 +75,10 @@ services:
       - db
       - rabbitmq
     volumes:
-      - ./backend:/app
+      - media:/app/media
+      - static:/app/static
+      - gunicorn_logs:/var/log/gunicorn
+      - django_logs:/var/log/django
 
   worker:
     build:
@@ -69,7 +87,10 @@ services:
       sh -c "./wait-for-it.sh db:5432 --
       && ./wait-for-it.sh rabbitmq:5672 --
       && python manage.py rundramatiq"
+    volumes:
+      - django_logs:/var/log/django
     environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -96,7 +117,10 @@ services:
       sh -c "./wait-for-it.sh db:5432 --
       && ./wait-for-it.sh rabbitmq:5672 --
       && python manage.py rundramatiq"
+    volumes:
+      - django_logs:/var/log/django
     environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -120,12 +144,16 @@ services:
   test_runner:
     command: >
       sh -c "./wait-for-it.sh db:5432 --
+      && ./wait-for-it.sh rabbitmq:5672 --
       && python manage.py test"
+    volumes:
+      - django_logs:/var/log/django
     build:
       context: ./backend
     ports:
       - "8000:8000"
     environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -145,8 +173,11 @@ services:
     depends_on:
       - db
       - rabbitmq
-    volumes:
-      - ./backend:/app
+      - test_worker
 
 volumes:
   postgres_data:
+  media:
+  static:
+  gunicorn_logs:
+  django_logs:

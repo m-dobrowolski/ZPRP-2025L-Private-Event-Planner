@@ -4,11 +4,11 @@
 
 up:
 	@echo "Starting services..."
-	docker-compose up -d backend worker frontend
+	docker-compose up -d reverse-proxy backend worker frontend
 
 down:
 	@echo "Stopping services..."
-	docker-compose stop backend worker frontend
+	docker-compose stop reverse-proxy backend worker frontend
 
 # Testing
 

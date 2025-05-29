@@ -1,0 +1,27 @@
+server {
+    listen 80;
+    server_name localhost;
+    client_max_body_size 100M;
+
+    location /static/ {
+        alias /backend/static/;
+    }
+
+    location /media/ {
+        alias /backend/media/;
+    }
+
+    location /api/ {
+        proxy_pass http://backend:8000/api/;
+        proxy_pass_request_headers on;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        proxy_pass http://frontend:3000/;
+        proxy_pass_request_headers on;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
